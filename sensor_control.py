@@ -10,9 +10,15 @@ with serial.Serial('COM3', 576000, timeout=1) as ser:
 
     while True:
         # according to manual send D to get response
-        ser.write('D'.encode('ascii')) 
+        ser.write('D'.encode('ASCII')) 
         if(ser.in_waiting > 0): #checks if there is bytes to be read
             serial_output = ser.readline() #reads to newline character
-            # print(type(serial_output))
-            print(serial_output.decode('ascii')) 
-            # print(serial_output)
+            try: 
+                serial_output_ascii = serial_output.decode('ascii')
+            except: 
+                print('Data communication was not successful)')
+
+            oxygen_ppm = serial_output_ascii.split(',')[0]
+            oxygen_ppm = oxygen_ppm.replace('d','')
+            print(oxygen_ppm)
+            
