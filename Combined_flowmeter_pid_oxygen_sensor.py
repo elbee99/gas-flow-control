@@ -46,7 +46,7 @@ def controlled_system(flow_rate,oxygen_percent):
     print(oxygen_percent)
     return oxygen_percent
 oxygen_ppm_stored = np.array([])
-v = 20 # setpoint 
+o2 = 20 # setpoint 
 # opens the COM3 port which is what the O2 sensor was when I plugged it in
 # check to see if it is COM3 before running
 # Will try optimise so it selects automatically soon
@@ -104,8 +104,8 @@ with open('oxygen_sensor.txt', 'w') as f:
                             f.write('\n')
                             
                             if abs(oxygen_percent-setpoint) < 1:
-                                control = pid(v)
-                                v = controlled_system(control,oxygen_percent)
+                                new_flow = pid(o2)
+                                o2 = controlled_system(new_flow,oxygen_percent)
                             else:
                                 controlled_system(setpoint,oxygen_percent)
                             # if(len(oxygen_ppm_stored)>1):
