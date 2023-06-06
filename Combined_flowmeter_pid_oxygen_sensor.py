@@ -6,6 +6,8 @@ import numpy as np
 from simple_pid import PID
 from alicat import FlowController
 
+piddelay = 0
+
 flow_controller_O2 = FlowController(port='COM3')
 flow_controller_Ar = FlowController(port='COM5')
 
@@ -15,8 +17,8 @@ print(flow_controller_Ar.get())
 flow_controller_O2.set_gas('O2')
 flow_controller_Ar.set_gas('Ar')
 
-flow_controller_O2.set_flow_rate(20)
-flow_controller_Ar.set_flow_rate(80)
+flow_controller_O2.set_flow_rate(25)
+flow_controller_Ar.set_flow_rate(75)
 total_flow = 100 # set the total flowrate 
 setpoint = 0
 def printtext():
@@ -38,7 +40,7 @@ b = Button(root,text='okay',command=printtext)
 b.pack(side='bottom')
 root.mainloop()
 
-pid = PID(1,0.02,0, sample_time = 1, setpoint=setpoint, output_limits=(12,24), starting_output=setpoint)
+pid = PID(0.9,0.03,0, sample_time = 1, setpoint=setpoint, output_limits=(0,30), starting_output=setpoint)
 serial_output = ""
 def controlled_system(flow_rate,oxygen_percent):
     flow_controller_O2.set_flow_rate(flow_rate)
@@ -46,7 +48,7 @@ def controlled_system(flow_rate,oxygen_percent):
     print(oxygen_percent)
     return oxygen_percent
 oxygen_ppm_stored = np.array([])
-v = 20 # setpoint 
+v = setpoint # setpoint 
 # opens the COM3 port which is what the O2 sensor was when I plugged it in
 # check to see if it is COM3 before running
 # Will try optimise so it selects automatically soon
@@ -91,23 +93,27 @@ with open('oxygen_sensor.txt', 'w') as f:
                             xdata, ydata = line.get_xdata(),line.get_ydata()
                             xdata = np.append(xdata,current_time)
                             ydata = np.append(ydata,oxygen_percent)
-
-                            line.set_data(xdata,ydata)
+                            setpoint_line = np.ones(len(xdata))*setpoint
+                            ax.plot(xdata,setpoint_line,'r--')
+                            line.set_data(xdata,ydata)                           
                             ax.relim()
                             ax.autoscale_view()
 
                             fig.canvas.draw()
                             fig.canvas.flush_events()
                             plt.pause(0.1)
-
                             f.write(data_line)
                             f.write('\n')
-                            
-                            if abs(oxygen_percent-setpoint) < 1:
-                                control = pid(v)
-                                v = controlled_system(control,oxygen_percent)
-                            else:
-                                controlled_system(setpoint,oxygen_percent)
+                            # control = pid(v)
+                            # v = controlled_system(control,oxygen_percent)
+                            # if abs(oxygen_percent-setpoint) < 2.5:
+                            #     piddelay += 1
+                            #     if piddelay > 20:
+                            #         control = pid(v)
+                            #         v = controlled_system(control,oxygen_percent)
+                            # else:
+                            #     piddelay = 0
+                            #     controlled_system(setpoint,oxygen_percent)
                             # if(len(oxygen_ppm_stored)>1):
                             #     v = controlled_system(control,oxygen_ppm_stored[len(oxygen_ppm_stored)-1])
                             #     print(oxygen_ppm_stored[len(oxygen_ppm_stored)-1])

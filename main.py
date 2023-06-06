@@ -13,3 +13,11 @@ t2 = Thread(target=oxygen_plotting, args=(O2_conc_filepath))
 t1.start()
 t2.start()
 
+import tkinter as tk
+import customtkinter as ctk
+#system settings
+ctk.set_appearance_mode("System")
+ctk.set_default_color_theme("blue")
+#app frame
+app = ctk.CTk
+app.geometry("720x480")

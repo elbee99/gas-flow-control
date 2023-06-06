@@ -1,5 +1,6 @@
 import serial
 import time
+import datetime
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -16,6 +17,7 @@ def oxygen_plotting(filename='oxygen_conc.txt'):
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('O$_2$ conc. (%)')
         line, = ax.plot([],[])
+        f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
         f.write('Time (s)\tO2 conc. (ppm)\n')
         while True:
             oxygen_ppm = read_O2_sensor()
