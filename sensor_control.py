@@ -5,9 +5,7 @@ import matplotlib.animation as animation
 import numpy as np
 serial_output = ""
 
-# opens the COM3 port which is what the O2 sensor was when I plugged it in
-# check to see if it is COM3 before running
-# Will try optimise so it selects automatically soon
+
 with open('oxygen_sensor.txt', 'w') as f:
     f.write('Time (s)\tO2 conc. (ppm)\n')
     for port in range(1,17):
