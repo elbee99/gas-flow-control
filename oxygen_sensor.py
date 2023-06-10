@@ -3,7 +3,6 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
-serial_output = ""
 
 def read_O2_sensor():
     """
@@ -34,8 +33,6 @@ def read_O2_sensor():
                         #print(oxygen_ppm)
                         oxygen_ppm = oxygen_ppm.replace('d','')
                         #print(serial_output_ascii)
-                        if oxygen_ppm == None:
-                             return str(0.0)
                         return oxygen_ppm
         except Exception:
             pass

@@ -16,9 +16,9 @@ def main(use_example_schedule = False):
     if  not use_example_schedule:
         schedule = {'number_of_steps' : None,
                     'change_time' : None,
-                    'step_lengths' : None,
-                    'step_total_flow' : None,
-                    'step_composition' : None
+                    'step_lengths' : [],
+                    'step_total_flow' : [],
+                    'step_composition' : []
                     }
         # get user defined number of steps in their program
         
@@ -26,7 +26,7 @@ def main(use_example_schedule = False):
             schedule['number_of_steps'] = input('Enter number of steps: ')
             #checks if input is an integer and if so breaks the loop
             try:
-                int(schedule['number_of_steps'])
+                schedule['number_of_steps']=int(schedule['number_of_steps'])
                 break
             #if input is not an integer, prints error message and loops back to start
             # this allows for integer input next time
@@ -37,17 +37,17 @@ def main(use_example_schedule = False):
         while True:
             schedule['change_time'] = input('Enter amount of rest time between step changes (mins) (rec 5 mins): ')
             try:
-                int(schedule['change_time'])
+                schedule['change_time']=float(schedule['change_time'])
                 break
             except ValueError:
-                print('Rest time must be an integer')
+                print('Rest time must be a number')
                 
         # get user defined step lengths
         for i in range(schedule['number_of_steps']):
             while True:
                 schedule['step_lengths'].append(input('Enter step length for step {} (mins): '.format(i+1)))
                 try:
-                    int(schedule['step_lengths'][i])
+                    schedule['step_lengths'][i]=float(schedule['step_lengths'][i])
                     break
                 except ValueError:
                     print('Step length must be an integer')   
@@ -57,10 +57,10 @@ def main(use_example_schedule = False):
             while True:
                 schedule['step_total_flow'].append(input('Enter total flow rate for step {} (sccm): '.format(i+1)))
                 try:
-                    int(schedule['step_total_flow'][i])
+                    schedule['step_total_flow'][i]=float(schedule['step_total_flow'][i])
                     break
                 except ValueError:
-                    print('Total flow rate must be an integer')
+                    print('Total flow rate must be a number')
                     continue
             
         # get user defined step compositions
@@ -68,10 +68,10 @@ def main(use_example_schedule = False):
             while True:
                 schedule['step_composition'].append(input('Enter O2 composition for step {} (percent): '.format(i+1)))
                 try:
-                    int(schedule['step_composition'][i])
+                    schedule['step_composition'][i]=float(schedule['step_composition'][i])
                     break
                 except ValueError:
-                    print('O2 composition must be an integer')
+                    print('O2 composition must be a number')
                         
         # checks the schedule makes sense
         if len(schedule['step_lengths']) != schedule['number_of_steps']:
@@ -86,25 +86,28 @@ def main(use_example_schedule = False):
             print('Step length: {} mins'.format(schedule['step_lengths'][i]))
             print('Total flow rate: {} sccm'.format(schedule['step_total_flow'][i]))
             print('O2 composition: {} percent'.format(schedule['step_composition'][i]))
-            flow_control(schedule['step_total_flow'][i],schedule['step_composition'][i])
-            time.sleep(schedule['step_lengths'][i]*60)
+            flow_control(schedule['step_total_flow'][i],schedule['step_composition'][i],
+                         control_time=schedule['step_lengths'][i]*60)
             print('Step {} of {} complete'.format(i+1,schedule['number_of_steps']))
             if i != schedule['number_of_steps']-1:
                 print('Resting for {} mins'.format(schedule['change_time']))
+                flow_control(schedule['step_total_flow'][i+1],schedule['step_composition'][i+1],
+                             control_time=schedule['change_time']*60)
                 time.sleep(schedule['change_time']*60)
     
 
 
 
 if __name__ == "__main__":
-    process1 = multiprocessing.Process(target=main)
-    process2 = multiprocessing.Process(target=oxygen_plotting)
+    # process1 = multiprocessing.Process(target=main)
+    # process2 = multiprocessing.Process(target=oxygen_plotting)
 
-    # Start the processes
-    process1.start()
-    process2.start()
+    # # Start the processes
+    # process1.start()
+    # process2.start()
 
-    # Wait for both processes to finish
-    process1.join()
-    process2.join()
+    # # Wait for both processes to finish
+    # process1.join()
+    # process2.join()
+    main()
     
