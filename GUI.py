@@ -67,7 +67,7 @@ def create_gui():
 
     # app frame
     app = ctk.CTk()
-    app.geometry("310x400")
+    app.geometry("350x400")
     app.title("Oxygen Control")
     GUIfont = ctk.CTkFont(family="Arial", size=12, weight="normal")
 
@@ -132,7 +132,7 @@ def create_gui():
 
 def create_gui_test():
     app = tk.Tk()
-    app.geometry("310x400")
+    app.geometry("310x500")
     app.title("Oxygen Control")
     GUIfont = ("Arial", 12, "normal")
     app.O2_value_label = tk.Label(app, font=GUIfont)

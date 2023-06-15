@@ -34,7 +34,7 @@ def flow_control(total_flow, O2_set_point=15, control_time = None):
     start_time = time.time()
     if type(control_time) == float or type(control_time) == int:
         while time.time()-start_time < control_time:
-            print('Runtime is {%.2f} seconds'.format(time.time()-start_time))
+            print('Runtime is {0:.2f} seconds'.format(time.time()-start_time))
             oxygen_percent = float(read_O2_sensor())*10e-5
             if abs(oxygen_percent-O2_set_point) < 1:
                 PID_setpoint = pid(oxygen_percent) #this is the setpoint required the PID controller
