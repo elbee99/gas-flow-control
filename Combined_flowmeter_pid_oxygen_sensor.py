@@ -29,9 +29,7 @@ def printtext():
 
 from tkinter import *
 root = Tk()
-
 root.title('Name')
-
 e = Entry(root)
 e.pack()
 e.focus_set()
@@ -40,7 +38,7 @@ b = Button(root,text='okay',command=printtext)
 b.pack(side='bottom')
 root.mainloop()
 
-pid = PID(0.9,0.03,0, sample_time = 1, setpoint=setpoint, output_limits=(0,30), starting_output=setpoint)
+pid = PID(0.9,0.016,0, sample_time = 1, setpoint=setpoint, output_limits=(0,30), starting_output=setpoint)
 serial_output = ""
 def controlled_system(flow_rate,oxygen_percent):
     flow_controller_O2.set_flow_rate(flow_rate)
@@ -88,7 +86,7 @@ with open('oxygen_sensor.txt', 'w') as f:
                             oxygen_ppm_stored = np.append(oxygen_ppm_stored,oxygen_percent)
                             #print(oxygen_ppm_stored)
                             current_time = time.time()-start_time 
-                            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm
+                            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm+'\t'+str(setpoint)
 
                             xdata, ydata = line.get_xdata(),line.get_ydata()
                             xdata = np.append(xdata,current_time)

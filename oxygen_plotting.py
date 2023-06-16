@@ -43,7 +43,6 @@ def oxygen_plotting(filename='oxygen_conc.txt'):
             fig.canvas.draw()
             fig.canvas.flush_events()
             plt.pause(0.1)
-
             f.write(data_line)
             f.write('\n')
 
