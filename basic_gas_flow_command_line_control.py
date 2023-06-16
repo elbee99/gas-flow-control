@@ -8,6 +8,7 @@ plt.ioff()
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import time
 import datetime
+
 def main():
     ctk.set_appearance_mode("Dark")
     ctk.set_default_color_theme("blue")
@@ -27,12 +28,12 @@ def main():
     app.ArFlow_unit_label.grid(row=0, column=3, padx=(5, 20), pady=(100, 5), sticky="ew")
 
     # oxygen flow rate
-    app.O2End_label = ctk.CTkLabel(app, text="Oxygen Flow Rate", font=GUIfont)
-    app.O2End_label.grid(row=2, column=0, padx=(20, 5), pady=5, sticky="ew")
-    app.O2End_entry = ctk.CTkEntry(app, placeholder_text="0.00-30.00", border_color="white", validate="key")
-    app.O2End_entry.grid(row=2, column=2, columnspan=1, padx=5, sticky="ew")
-    app.O2End_unit_label = ctk.CTkLabel(app, text="sccm", font=GUIfont)
-    app.O2End_unit_label.grid(row=2, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
+    app.O2Flow_label = ctk.CTkLabel(app, text="Oxygen Flow Rate", font=GUIfont)
+    app.O2Flow_label.grid(row=2, column=0, padx=(20, 5), pady=5, sticky="ew")
+    app.O2Flow_entry = ctk.CTkEntry(app, placeholder_text="0.00-30.00", border_color="white", validate="key")
+    app.O2Flow_entry.grid(row=2, column=2, columnspan=1, padx=5, sticky="ew")
+    app.O2Flow_unit_label = ctk.CTkLabel(app, text="sccm", font=GUIfont)
+    app.O2Flow_unit_label.grid(row=2, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
    
     #Update Button
     app.run_button = ctk.CTkButton(app, text="Update",border_color="dark-blue")
@@ -44,12 +45,18 @@ def main():
     app.O2End_entry = ctk.CTkEntry(app, placeholder_text="0.00-30.00", border_color="white", validate="key")
     app.O2End_entry.grid(row=4, column=2, columnspan=1, padx=5, sticky="ew")
     app.O2End_unit_label = ctk.CTkLabel(app, text="%", font=GUIfont)
-    app.O2End_unit_label.grid(row=4, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
-
+    app.O2End_unit_label.grid(row=4, column=3, padx=(5, 20), pady=(10, 5), sticky="ew") 
+    setpoint = 10
+    def updatesetpoint():
+        setpoint = float(app.O2End_entry.get())
+        print(setpoint)
     #Update Button
-    app.run_button = ctk.CTkButton(app, text="Update",border_color="dark-blue")
+    app.run_button = ctk.CTkButton(app, text="Update",border_color="dark-blue", command=updatesetpoint)
     app.run_button.grid(row=5,column=0,columnspan=4,padx=20,pady=5)
-    setpoint = 18
+    
+
+
+    
     # generate the figure and plot object which will be linked to the root element
     from oxygen_sensor import read_O2_sensor
 
@@ -69,6 +76,7 @@ def main():
             filename (str, optional): Relative or absolute path to the desired 
             file location of oxygen sensor data. Defaults to 'oxygen_conc.txt'.
         """
+        
         with open(filename, 'w') as f:
             
             f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
@@ -85,6 +93,7 @@ def main():
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
             ydata = np.append(ydata,float(oxygen_ppm)/10e3)
+            
             setpoint_line = np.ones(len(xdata))*setpoint
             ax.plot(xdata,setpoint_line,'r--')
             line.set_data(xdata,ydata)
@@ -95,13 +104,10 @@ def main():
             canvas = FigureCanvasTkAgg(fig,master=app)
             
             canvas.get_tk_widget().grid(row=0, column=6,  rowspan=9, padx=(20, 5), pady=(100, 5), sticky="ew")
-            plt.pause(0.1)
             f.write(data_line)
             f.write('\n')
-            app.after(500,oxygen_plotting)
-    
+            app.after(1000,oxygen_plotting())
     oxygen_plotting()
-    plt.close(fig)
     app.mainloop()
         
 
