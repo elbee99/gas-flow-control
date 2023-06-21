@@ -63,20 +63,22 @@ def main():
     app.O2End_unit_label = ctk.CTkLabel(app, text="%", font=GUIfont)
     app.O2End_unit_label.grid(row=4, column=3, padx=(5, 20), pady=(10, 5), sticky="ew") 
 
-    
-    def updatesetpoint():
+    # Shared dictionary to store the flag
+    shared_data = {'continue_running': True}
+
+    def updatesetpoint():  #press enter to update setpoint 
+
+        # Disable the update button
+        app.run_button.configure(state="disabled")
+        shared_data['continue_running'] = True
+
         setpoint.set(app.O2End_entry.get())
         target_O2_set_point = float(setpoint.get())
         pid = PID(1,0.02,0, sample_time = 1, setpoint=target_O2_set_point, output_limits=(12,24), starting_output=target_O2_set_point)
-
-        running_flag = False
-
+        
         def flow_control_O2(target_O2_set_point=target_O2_set_point):
-            nonlocal running_flag
-
-            if running_flag:
+            if not shared_data['continue_running']:
                 return
-            running_flag = True
 
             oxygen_percent = float(read_O2_sensor())*10e-5
             print('Oxygen Percent: ',oxygen_percent,'Target O2 Set Point: ',target_O2_set_point)
@@ -87,18 +89,34 @@ def main():
                 oxygen_percent = flow_control_basic(100,PID_setpoint)
             else:
                 flow_control_basic(100,target_O2_set_point)
-            app.after(100,flow_control_O2)
-            running_flag = False
+
+            if shared_data['continue_running']:
+                app.after(100,flow_control_O2)
+
         flow_control_O2()
+
+    def cancel_updatesetpoint():
+        
+        # Enable the update button
+        app.run_button.configure(state="normal")
+        app.run_button.configure(command=updatesetpoint) 
+        state = app.run_button.cget("state")
+        print("Button state:", state)
+        shared_data['continue_running'] = False
         # if the O2 percent is 1.5 or more away from the setpoint, then update the flow rate
         # flow_control(100,float(setpoint.get()))
         
         # flow_control(100,float(setpoint.get()))
         # print(setpoint)
+
+
+    # Button to cancel updatesetpoint()
+    cancel_button = ctk.CTkButton(app, text="Cancel", border_color="dark-blue", command=cancel_updatesetpoint)
+    cancel_button.grid(row=6, column=0, columnspan=4, padx=20, pady=5)
+
     #Update Button
     app.run_button = ctk.CTkButton(app, text="Update",border_color="dark-blue", command=updatesetpoint)
     app.run_button.grid(row=5,column=0,columnspan=4,padx=20,pady=5)
-
     #once the setpoint button is pressed, allow the flow control to kick in
     
 
