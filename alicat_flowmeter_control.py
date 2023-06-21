@@ -4,7 +4,7 @@ from oxygen_sensor import read_O2_sensor
 import time
 
 
-def flow_control(total_flow, O2_set_point=15, control_time = None):
+def flow_control(total_flow, target_O2_set_point=15, control_time = None):
     # for number in range(1,17):
     #     try:
     #         flow_controller = FlowController(port='COM{}'.format(number))
@@ -25,8 +25,8 @@ def flow_control(total_flow, O2_set_point=15, control_time = None):
     # print(read_O2_sensor())
     flow_controller_O2 = FlowController(port='COM{}'.format(3))
     flow_controller_Ar = FlowController(port='COM{}'.format(5))
-    pid = PID(1,0.02,0, sample_time = 1, setpoint=O2_set_point, output_limits=(12,24), starting_output=O2_set_point)
-    def controlled_system(total_flow=total_flow, O2_set_point=O2_set_point,current_O2_percent = float(read_O2_sensor())/1000):
+    pid = PID(1,0.02,0, sample_time = 1, setpoint=target_O2_set_point, output_limits=(12,24), starting_output=target_O2_set_point)
+    def controlled_system(total_flow=total_flow, O2_set_point=target_O2_set_point,current_O2_percent = float(read_O2_sensor())/1000):
         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
         # print(current_O2_percent)
@@ -36,22 +36,29 @@ def flow_control(total_flow, O2_set_point=15, control_time = None):
         while time.time()-start_time < control_time:
             print('Runtime is {0:.2f} seconds'.format(time.time()-start_time))
             oxygen_percent = float(read_O2_sensor())*10e-5
-            if abs(oxygen_percent-O2_set_point) < 1:
+            if abs(oxygen_percent-target_O2_set_point) < 1:
                 PID_setpoint = pid(oxygen_percent) #this is the setpoint required the PID controller
                 #we need to get current value and feed back into the PID controller
                 oxygen_percent = controlled_system(total_flow,PID_setpoint,oxygen_percent)
             else:
-                controlled_system(total_flow,O2_set_point,oxygen_percent)
+                controlled_system(total_flow,target_O2_set_point,oxygen_percent)
     else:
         while True:
             oxygen_percent = float(read_O2_sensor())*10e-3
-            if abs(oxygen_percent-O2_set_point) < 1:
+            if abs(oxygen_percent-target_O2_set_point) < 1.5:
                 PID_setpoint = pid(oxygen_percent) #this is the setpoint required the PID controller
                 #we need to get current value and feed back into the PID controller
                 oxygen_percent = controlled_system(total_flow,PID_setpoint,oxygen_percent)
             else:
-                controlled_system(total_flow,O2_set_point,oxygen_percent)
+                controlled_system(total_flow,target_O2_set_point,oxygen_percent)
 
+def flow_control_basic(total_flow=100,target_O2_setpoint=15):
+    flow_controller_O2 = FlowController(port='COM{}'.format(3))
+    flow_controller_Ar = FlowController(port='COM{}'.format(5))
+    flow_controller_O2.set_flow_rate(total_flow*target_O2_setpoint/100)
+    flow_controller_Ar.set_flow_rate(total_flow-(total_flow*target_O2_setpoint/100))
+    return float(read_O2_sensor())*10e-3
     
+
 if __name__ == '__main__':
     flow_control(100,15)
