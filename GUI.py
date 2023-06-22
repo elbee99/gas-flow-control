@@ -1,18 +1,18 @@
 from alicat_flowmeter_control import flow_control
 from alicat import FlowController
 
-flow_controller_O2 = FlowController(port='COM3')
-flow_controller_Ar = FlowController(port='COM5')
+# flow_controller_O2 = FlowController(port='COM3')
+# flow_controller_Ar = FlowController(port='COM5')
 
-flow_controller_O2.set_gas('O2')
-flow_controller_Ar.set_gas('Ar')
+# flow_controller_O2.set_gas('O2')
+# flow_controller_Ar.set_gas('Ar')
 
 
 import tkinter as tk
 import customtkinter as ctk
 import numpy as np
 import matplotlib.pyplot as plt
-plt.ioff()
+# plt.ioff()
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import time
 import datetime
@@ -258,11 +258,11 @@ def create_gui():
         
     # app frame
     app = ctk.CTk()
-    app.geometry("800x600")
+    app.geometry("900x600")
     app.title("Oxygen Control")
     app.rowconfigure(0,weight=1)
-    app.columnconfigure(0,weight=1)
-    app.columnconfigure(1,weight=1)
+    app.columnconfigure(0,weight=2)
+    app.columnconfigure(1,weight=2)
     GUIfont = ctk.CTkFont(family="Arial", size=12, weight="normal")
 
     # error update
