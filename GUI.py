@@ -1,7 +1,22 @@
+from alicat_flowmeter_control import flow_control
+from alicat import FlowController
+
+flow_controller_O2 = FlowController(port='COM3')
+flow_controller_Ar = FlowController(port='COM5')
+
+flow_controller_O2.set_gas('O2')
+flow_controller_Ar.set_gas('Ar')
+
+
 import tkinter as tk
 import customtkinter as ctk
-#from oxygen_sensor import read_O2_sensor
-#put () behind read_O2_sensor and take out global read_O2_sensor
+import numpy as np
+import matplotlib.pyplot as plt
+plt.ioff()
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import time
+import datetime
+from oxygen_sensor import read_O2_sensor
 from oxygen_plotting import oxygen_plotting
 from pynput.keyboard import Key, Controller
 
@@ -19,8 +34,8 @@ Duration_equal_label_list = []
 Duration_entry_list = []
 Duration_unit_label_list =[]
 
-check_val_point = []
-check_val_duration=[]
+check_val_point = [1]
+check_val_duration=[1]
 
 Number_of_flow = 1
 Flow_label_list = []
@@ -32,8 +47,8 @@ Flow_Duration_equal_label_list = []
 Flow_Duration_entry_list = []
 Flow_Duration_unit_label_list =[]
 
-check_val_flow = []
-check_val_flow_duration=[]
+check_val_flow = [1]
+check_val_flow_duration=[1]
 
 Mode="conc"
 Conc_error=None
@@ -58,8 +73,9 @@ def create_gui():
             if text:
                 try:
                     value = float(text)
-                    if 0 <= value <= 30 or value is None:
+                    if 0 <= value <= 30:
                         #app.input_alert_label.config(text="")
+                        print(value)
                         try:
                             check_val_point[pos] = True
                         except IndexError:
@@ -79,9 +95,9 @@ def create_gui():
             else:
                 #app.input_alert_label.configure(text="")
                 try:
-                    check_val_point[pos] = True
+                    check_val_point[pos] = False
                 except IndexError:
-                    check_val_point.append(True)
+                    check_val_point.append(False)
 
         for i,val in enumerate(check_val_point):
             if check_val_point[i]==True:
@@ -96,15 +112,6 @@ def create_gui():
                 app.input_alert_label.configure(text="Input error")
         return
 
-    # # error for start point
-    # def on_validate_point(*args):
-    #         if not check_point(Point_entry_list.get()):
-    #             app.input_alert_label.config(fg="red", bg=app.cget("bg"))
-    #             app.input_alert_label.grid(row=6, column=0, columnspan=4, padx=10, pady=(0, 5), sticky="ew")
-    #         else:
-    #             pass
-    #             #app.input_alert_label.grid_forget()
-
     def check_duration(text):
         global Mode
         for pos,i in enumerate(Duration_entry_list):
@@ -112,12 +119,17 @@ def create_gui():
             if text:
                 try:
                     value = float(text)
-                    if value > 0 or value is None:
+                    if value > 0:
                         #app.input_alert_label.config(text="")
                         try:
                             check_val_duration[pos] = True
                         except IndexError:
                             check_val_duration.append(True)
+                    elif value == None:
+                        try:
+                            check_val_duration[pos] = False
+                        except IndexError:
+                            check_val_duration.append(False)
                     else:
                         #app.input_alert_label.config(text="Input must be a value between 0 and 30")
                         try:
@@ -133,9 +145,9 @@ def create_gui():
             else:
                 #app.input_alert_label.configure(text="")
                 try:
-                    check_val_duration[pos] = True
+                    check_val_duration[pos] = False
                 except IndexError:
-                    check_val_duration.append(True)
+                    check_val_duration.append(False)
 
         for i,val in enumerate(check_val_duration):
             if check_val_duration[i]==True:
@@ -160,7 +172,7 @@ def create_gui():
             if text:
                 try:
                     value = float(text)
-                    if 0 <= value <= 100 or value is None:
+                    if 0 <= value <= 100:
                         #app.input_alert_label.config(text="")
                         try:
                             check_val_flow[pos] = True
@@ -181,9 +193,9 @@ def create_gui():
             else:
                 #app.input_alert_label.configure(text="")
                 try:
-                    check_val_flow[pos] = True
+                    check_val_flow[pos] = False
                 except IndexError:
-                    check_val_flow.append(True)
+                    check_val_flow.append(False)
 
         for i,val in enumerate(check_val_flow):
             if check_val_flow[i]==True:
@@ -205,7 +217,7 @@ def create_gui():
             if text:
                 try:
                     value = float(text)
-                    if value > 0 or value is None:
+                    if value > 0:
                         #app.input_alert_label.config(text="")
                         try:
                             check_val_flow_duration[pos] = True
@@ -226,9 +238,9 @@ def create_gui():
             else:
                 #app.input_alert_label.config(text="")
                 try:
-                    check_val_flow_duration[pos] = True
+                    check_val_flow_duration[pos] = False
                 except IndexError:
-                    check_val_flow_duration.append(True)
+                    check_val_flow_duration.append(False)
 
         for i,val in enumerate(check_val_flow_duration):
             if check_val_flow_duration[i]==True:
@@ -244,54 +256,18 @@ def create_gui():
                 app.input_alert_label.configure(text="Input error")
         return
         
-    # error for start point
-    # def on_validate_duration(*args):
-    #         if not check_duration(Duration_entry_list.get()):
-    #             app.input_alert_label.config(fg="red", bg=app.cget("bg"))
-    #             app.input_alert_label.grid(row=6, column=0, columnspan=4, padx=10, pady=(0, 5), sticky="ew")
-    #         else:
-    #             pass
-                #app.input_alert_label.grid_forget()
-
-    # # error for end point
-    # def on_validate_end(*args):
-    #     if not check(app.O2End_entry.get()):
-    #         app.input_alert_label.config(fg="red", bg=app.cget("bg"))
-    #         app.input_alert_label.grid(row=4, column=0, columnspan=4, padx=10, pady=(0, 5), sticky="ew")
-    #     else:
-    #         app.input_alert_label.grid_forget()
-
-    # error for ramp
-    # def check_ramp(text):
-    #     if text:
-    #         try:
-    #             value = float(text)
-    #             return True
-    #         except ValueError:
-    #             app.input_alert_label.config(text="Input must be a number")
-    #             return False
-    #     else:
-    #         app.input_alert_label.config(text="")
-    #     return True
-
-    # def on_validate_ramp(*args):
-    #     if not check_ramp(app.ramp_entry.get()):
-    #         app.input_alert_label.config(fg="red", bg=app.cget("bg"))
-    #         app.input_alert_label.grid(row=6, column=0, columnspan=4, padx=10, pady=(0, 5), sticky="ew")
-    #     else:
-    #         app.input_alert_label.grid_forget()
-
     # app frame
     app = ctk.CTk()
-    app.geometry("350x400")
+    app.geometry("800x600")
     app.title("Oxygen Control")
     app.rowconfigure(0,weight=1)
     app.columnconfigure(0,weight=1)
+    app.columnconfigure(1,weight=1)
     GUIfont = ctk.CTkFont(family="Arial", size=12, weight="normal")
 
     # error update
     app.input_alert_label = ctk.CTkLabel(app, text="", font=GUIfont, text_color=("red"))
-    app.input_alert_label.grid(row=4, column=0, columnspan=4, padx=10, pady=(0, 5), sticky="ew")
+    app.input_alert_label.grid(row=4, column=0, columnspan=1, padx=10, pady=(0, 5), sticky="ew")
 
     # set frames
     FrameConc = ctk.CTkScrollableFrame(app)
@@ -307,6 +283,11 @@ def create_gui():
     FrameFlowRate.grid_columnconfigure(1,weight=1)
     FrameFlowRate.grid_columnconfigure(2,weight=1)
     FrameFlowRate.grid_columnconfigure(3,weight=1)
+
+    # FramePlot = ctk.CTkFrame(app)
+    # FramePlot.grid(row=0, column=1, sticky="news")
+    # FramePlot.columnconfigure(0,weight=4)
+    # FramePlot.rowconfigure(0,weight=3)
     
     #Choose Mode
     #app.conc_button = ctk.CTkButton(app, text="Run",border_color="dark-blue")
@@ -426,6 +407,8 @@ def create_gui():
                 del check_val_duration[-1]
             except IndexError:
                 pass
+            check_point(Point_entry)
+            check_duration(Duration_entry)
         return Number_of_point
     
      # Duration Frame
@@ -540,6 +523,8 @@ def create_gui():
                 del check_val_flow_duration[-1]
             except IndexError:
                 pass
+            check_flow(Flow_entry)
+            check_flow(Flow_Duration_entry)
         return Number_of_flow
     
     def change_to_flow():
@@ -547,11 +532,11 @@ def create_gui():
         FrameConc.grid_forget()
         FrameFlowRate.grid(row=0, column=0, ipadx=28, sticky="news")
         add_conc_button.grid_forget()
-        add_flow_button.grid(row=1,column=0,columnspan=7,padx=20,pady=5)
+        add_flow_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5)
         remove_conc_button.grid_forget()
-        remove_flow_button.grid(row=2,column=0,columnspan=7,padx=20,pady=5)
+        remove_flow_button.grid(row=2,column=0,columnspan=1,padx=20,pady=5)
         change_to_flow_button.grid_forget()
-        change_to_conc_button.grid(row=3,column=0,columnspan=7,padx=20,pady=5)
+        change_to_conc_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5)
         app.input_alert_label.configure(text="")
         if sum(check_val_flow) == len(check_val_flow) and sum(check_val_flow_duration) == len(check_val_flow_duration):
             app.input_alert_label.configure(text="")
@@ -565,11 +550,11 @@ def create_gui():
         FrameFlowRate.grid_forget()
         FrameConc.grid(row=0, column=0, ipadx=28, sticky="news")
         add_flow_button.grid_forget()
-        add_conc_button.grid(row=1,column=0,columnspan=7,padx=20,pady=5)
+        add_conc_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5)
         remove_flow_button.grid_forget()
-        remove_conc_button.grid(row=2,column=0,columnspan=7,padx=20,pady=5)
+        remove_conc_button.grid(row=2,column=0,columnspan=1,padx=20,pady=5)
         change_to_conc_button.grid_forget()
-        change_to_flow_button.grid(row=3,column=0,columnspan=7,padx=20,pady=5)
+        change_to_flow_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5)
         app.input_alert_label.configure(text="")
         if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
             app.input_alert_label.configure(text="")
@@ -582,13 +567,13 @@ def create_gui():
     O2_string = "O2 Concentration"
 
     add_conc_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addpoint())
-    add_conc_button.grid(row=1,column=0,columnspan=7,padx=20,pady=5)
+    add_conc_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5)
     add_flow_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addflow())
     remove_conc_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemovePoint())
-    remove_conc_button.grid(row=Number_of_point+1,column=0,columnspan=7,padx=20,pady=5)
+    remove_conc_button.grid(row=Number_of_point+1,column=0,columnspan=1,padx=20,pady=5)
     remove_flow_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemoveFlow())
     change_to_flow_button = ctk.CTkButton(app, text="Flow Rate",border_color="dark-blue", command=lambda:change_to_flow())
-    change_to_flow_button.grid(row=3,column=0,columnspan=7,padx=20,pady=5)
+    change_to_flow_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5)
     change_to_conc_button = ctk.CTkButton(app, text=O2_string.translate(SUB),border_color="dark-blue", command=lambda:change_to_conc())
 
     def runGUI():
@@ -602,6 +587,7 @@ def create_gui():
             print(sum(check_val_duration), len(check_val_duration))
             if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
                 print("run")
+                print(Point_entry_list[i] for i in Point_entry_list)
             elif sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
         elif Mode == "flow":
@@ -615,31 +601,83 @@ def create_gui():
 
     #run button
     run_button = ctk.CTkButton(app, text="Run",border_color="dark-blue", command=lambda: runGUI())
-    run_button.grid(row=5,column=0,columnspan=7,padx=20,pady=(5,20))
+    run_button.grid(row=5,column=0,columnspan=1,padx=20,pady=(5,20))
 
-    # if Mode == "conc":
-    #     if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
-    #         run_button.configure(command=lambda:runGUI(),state="normal")
-    #     elif sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
-    #         run_button.grid_forget()
-    # elif Mode == "flow":
-    #     if sum(check_val_flow) == len(check_val_flow) and sum(check_val_flow_duration) == len(check_val_flow_duration):
-    #         run_button.configure(command=lambda:runGUI(),state="normal")
-    #     else:
-    #         run_button.grid_forget()
 
-    # text displaying value of read_O2_sensor function
-    # app.O2_value_label = ctk.CTkLabel(app, font=GUIfont)
-    # app.O2_value_label.grid(row=8, column=0, padx=(20, 5), pady=5, sticky="ew")
-    # def update_O2_value():
-    #     """
-    #     Updates the O2 value label every 200ms
-    #     """
-    #     app.O2_value_label.configure(text="O2 value = " + str(float(read_O2_sensor)/10E3) + "%")
-    #     app.after(200, update_O2_value)
+    #liveplot
+    bv1=ctk.BooleanVar(value=False)
+    setpoint=ctk.StringVar(value='0')
+    def stopplotting():
+        bv1.set(0)
+        print(bv1.get())
+    def plotting():
+        bv1.set(1)
+        oxygen_plotting()
+        print(bv1.get())
+    
+    start_plot_button=ctk.CTkButton(app, text="Start Plotting",border_color="dark-blue", command=plotting)
+    start_plot_button.grid(row=1,column=1, columnspan=1, padx=20, pady=5)
+    stop_plot_button=ctk.CTkButton(app, text="Stop Plotting",border_color="dark-blue", command=stopplotting)
+    stop_plot_button.grid(row=2,column=1, columnspan=1, padx=20, pady=5)
+    
+    # generate the figure and plot object which will be linked to the root element
+    from oxygen_sensor import read_O2_sensor
 
-    # update_O2_value()
-    #app.resizable(False,False)
+    # opens the COM3 port which is what the O2 sensor was when I plugged it in
+    # check to see if it is COM3 before running
+    # Will try optimise so it selects automatically soon
+    start_time = time.time()
+    fig, ax = plt.subplots()
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('O$_2$ conc. (%)')
+    line, = ax.plot([],[])
+    canvas = FigureCanvasTkAgg(fig,master=app)
+    canvas.get_tk_widget().grid(row=0, column=1, columnspan=4, sticky="nsew")
+
+    def oxygen_plotting(filename='oxygen_conc.txt'):
+        """
+        Reads the oxygen sensor, records the data over time in a text file
+        and plots the data in real time
+        Args:
+            filename (str, optional): Relative or absolute path to the desired 
+            file location of oxygen sensor data. Defaults to 'oxygen_conc.txt'.
+        """
+        
+        with open(filename, 'w') as f:
+            
+            f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
+            f.write('Time (s)\tO2 conc. (ppm)\n')
+
+            
+
+            oxygen_ppm = read_O2_sensor()
+            print(oxygen_ppm)
+            oxygen_percent=float(oxygen_ppm)/10e3
+            current_time = time.time()-start_time 
+            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm
+
+            xdata, ydata = line.get_xdata(),line.get_ydata()
+            xdata = np.append(xdata,current_time)
+            ydata = np.append(ydata,float(oxygen_ppm)/10e3)
+            setpointstring=setpoint.get()
+            setpoint_line = np.ones(len(xdata))*float(setpointstring)
+            ax.plot(xdata,setpoint_line,'r--')
+            line.set_data(xdata,ydata)
+            ax.relim()
+            ax.autoscale_view()
+
+            fig.canvas.flush_events()
+            canvas = FigureCanvasTkAgg(fig,master=app)
+            canvas.get_tk_widget().grid(row=0, column=1, columnspan=4, sticky="nsew")
+            
+            f.write(data_line)
+            f.write('\n')
+
+            if bv1.get() == True:
+                plottingqueue = app.after(100000,oxygen_plotting())
+            else:
+                app.after_cancel(plottingqueue)
+
     app.mainloop()
 
 
