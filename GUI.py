@@ -22,6 +22,8 @@ from pynput.keyboard import Key, Controller
 
 keyboard = Controller()
 
+#extract entered values from the respective entry_lists
+#Variables for oxygen concentration mode
 Number_of_point = 1
 Point_label_list = []
 Point_equal_label_list = []
@@ -34,9 +36,12 @@ Duration_equal_label_list = []
 Duration_entry_list = []
 Duration_unit_label_list =[]
 
+##storing lists for the check functions
+check_val_total_flow = [1] 
 check_val_point = [1]
 check_val_duration=[1]
 
+#Varialbes for flow rate mode
 Number_of_flow = 1
 Flow_label_list = []
 Flow_equal_label_list = []
@@ -47,64 +52,89 @@ Flow_Duration_equal_label_list = []
 Flow_Duration_entry_list = []
 Flow_Duration_unit_label_list =[]
 
+##storing lists for the check functions
 check_val_flow = [1]
 check_val_flow_duration=[1]
 
+#Current mode the user is interacting with
 Mode="conc"
-Conc_error=None
-Flow_error=None
-# system settings
+
+# GUI function
 def create_gui():
     global Number_of_point
     global Point_entry_list, Point_equal_label_list, Point_label_list, Point_unit_label_list, Duration_entry_list, Duration_equal_label_list, Duration_label_list, Duration_unit_label_list
     global Flow_label_list, Flow_equal_label_list, Flow_entry_list, Flow_unit_label_list, Flow_Duration_label_list, Flow_Duration_equal_label_list, Flow_Duration_entry_list, Flow_Duration_unit_label_list
-    global Mode, Conc_error, Flow_error
+    global Mode
     """
-    Creates the GUI (made a function for multithreading)
+    Creates the GUI
     """
     ctk.set_appearance_mode("Dark")
     ctk.set_default_color_theme("blue")
 
-    # check errors
+    # check functions of the concentration mode
+    ## check total flow value
+    def check_total_flow(text):
+        global Mode
+        text = total_flow_entry.get()
+        if Mode == "conc":
+            if text: #if there is text input
+                try:
+                    value = float(text) #try converting text into a float
+                    if 0 < value <= 60: #restrict value range
+                        total_flow_entry.configure(border_color = "white") #configure border color of the corresponding entry cell
+                        check_val_total_flow[0]=True #stores True/False value at the corresponding index along the list
+                    else: #if the value is out of range
+                        total_flow_entry.configure(border_color = "red")
+                        check_val_total_flow[0]=False
+                except ValueError: #if the entry is not a number
+                    total_flow_entry.configure(border_color = "red")
+                    check_val_total_flow[0]=False
+            else: #if the entry is submitted without an input
+                check_val_total_flow[0]=False
+        #hide error message only if all entries for total flow rate, concentratoin setpoints, and durations are accepted 
+        if sum(check_val_total_flow) == len(check_val_total_flow) and sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
+            if Mode == "conc":
+                app.input_alert_label.configure(text="")
+        else:
+            if Mode == "conc":
+                app.input_alert_label.configure(text="Input error")
+    
+    ##check function for concentration setpoint
     def check_point(text):
         global Mode
-        for pos,i in enumerate(Point_entry_list):
+        for pos,i in enumerate(Point_entry_list): #checks all concentration setpoint entries everytime a binidng event occurs in one of them
             text = i.get()
             if text:
                 try:
                     value = float(text)
                     if 0 <= value <= 30:
-                        #app.input_alert_label.config(text="")
                         print(value)
                         try:
                             check_val_point[pos] = True
-                        except IndexError:
+                        except IndexError: #append instead,if the index does not exist in the check list yet
                             check_val_point.append(True)
                     else:
-                        #app.input_alert_label.config(text="Input must be a value between 0 and 30")
                         try:
                             check_val_point[pos] = False
                         except IndexError:
                             check_val_point.append(False)
                 except ValueError:
-                    #app.input_alert_label.config(text="Input must be a number")
                     try:
                         check_val_point[pos] = False
                     except IndexError:
                         check_val_point.append(False)
             else:
-                #app.input_alert_label.configure(text="")
                 try:
                     check_val_point[pos] = False
                 except IndexError:
                     check_val_point.append(False)
 
-        for i,val in enumerate(check_val_point):
+        for i,val in enumerate(check_val_point): #go through the check list and configure the entry cell's border colour correspondingly
             if check_val_point[i]==True:
                 Point_entry_list[i].configure(border_color="white")
             elif check_val_point[i]==False:
                 Point_entry_list[i].configure(border_color="red")
-        if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
+        if sum(check_val_total_flow) == len(check_val_total_flow) and sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
             if Mode == "conc":
                 app.input_alert_label.configure(text="")
         else:
@@ -112,6 +142,7 @@ def create_gui():
                 app.input_alert_label.configure(text="Input error")
         return
 
+    ##check function for duration
     def check_duration(text):
         global Mode
         for pos,i in enumerate(Duration_entry_list):
@@ -120,7 +151,6 @@ def create_gui():
                 try:
                     value = float(text)
                     if value > 0:
-                        #app.input_alert_label.config(text="")
                         try:
                             check_val_duration[pos] = True
                         except IndexError:
@@ -131,19 +161,16 @@ def create_gui():
                         except IndexError:
                             check_val_duration.append(False)
                     else:
-                        #app.input_alert_label.config(text="Input must be a value between 0 and 30")
                         try:
                             check_val_duration[pos] = False
                         except IndexError:
                             check_val_duration.append(False)
                 except ValueError:
-                    #app.input_alert_label.config(text="Input must be a number")
                     try:
                         check_val_duration[pos] = False
                     except IndexError:
                         check_val_duration.append(False)
             else:
-                #app.input_alert_label.configure(text="")
                 try:
                     check_val_duration[pos] = False
                 except IndexError:
@@ -154,17 +181,16 @@ def create_gui():
                 Duration_entry_list[i].configure(border_color="white")
             elif check_val_duration[i]==False:
                 Duration_entry_list[i].configure(border_color="red")
-        if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
+        if sum(check_val_total_flow) == len(check_val_total_flow) and sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
             if Mode == "conc":
                 app.input_alert_label.configure(text="")
-            #return Conc_error == False
         else:
             if Mode == "conc":
                 app.input_alert_label.configure(text="Input error")
-            #return Conc_error == True
         return
     
-     # check errors
+    # check functions of the flow rate mode
+    ## check function for flow rate
     def check_flow(text):
         global Mode
         for pos,i in enumerate(Flow_entry_list):
@@ -173,25 +199,21 @@ def create_gui():
                 try:
                     value = float(text)
                     if 0 <= value <= 100:
-                        #app.input_alert_label.config(text="")
                         try:
                             check_val_flow[pos] = True
                         except IndexError:
                             check_val_flow.append(True)
                     else:
-                        #app.input_alert_label.config(text="Input must be a value between 0 and 30")
                         try:
                             check_val_flow[pos] = False
                         except IndexError:
                             check_val_flow.append(False)
                 except ValueError:
-                    #app.input_alert_label.config(text="Input must be a number")
                     try:
                         check_val_flow[pos] = False
                     except IndexError:
                         check_val_flow.append(False)
             else:
-                #app.input_alert_label.configure(text="")
                 try:
                     check_val_flow[pos] = False
                 except IndexError:
@@ -210,6 +232,7 @@ def create_gui():
                 app.input_alert_label.configure(text="Input error")
         return
 
+    ##check function for duration (in flow rate mode)
     def check_flow_duration(text):
         global Mode
         for pos,i in enumerate(Flow_Duration_entry_list):
@@ -218,25 +241,21 @@ def create_gui():
                 try:
                     value = float(text)
                     if value > 0:
-                        #app.input_alert_label.config(text="")
                         try:
                             check_val_flow_duration[pos] = True
                         except IndexError:
                             check_val_flow_duration.append(True)
                     else:
-                        #app.input_alert_label.config(text="Input must be a value between 0 and 30")
                         try:
                             check_val_flow_duration[pos] = False
                         except IndexError:
                             check_val_flow_duration.append(False)
                 except ValueError:
-                    #app.input_alert_label.config(text="Input must be a number")
                     try:
                         check_val_flow_duration[pos] = False
                     except IndexError:
                         check_val_flow_duration.append(False)
             else:
-                #app.input_alert_label.config(text="")
                 try:
                     check_val_flow_duration[pos] = False
                 except IndexError:
@@ -251,12 +270,11 @@ def create_gui():
             if Mode == "flow":
                 app.input_alert_label.configure(text="")
         else:
-            Flow_error == True
             if Mode == "flow":
                 app.input_alert_label.configure(text="Input error")
         return
         
-    # app frame
+    # master app setup
     app = ctk.CTk()
     app.geometry("900x600")
     app.title("Oxygen Control")
@@ -265,11 +283,8 @@ def create_gui():
     app.columnconfigure(1,weight=2)
     GUIfont = ctk.CTkFont(family="Arial", size=12, weight="normal")
 
-    # error update
-    app.input_alert_label = ctk.CTkLabel(app, text="", font=GUIfont, text_color=("red"))
-    app.input_alert_label.grid(row=4, column=0, columnspan=1, padx=10, pady=(0, 5), sticky="ew")
-
     # set frames
+    ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
     FrameConc.grid(row=0, column=0, ipadx=28, sticky="news")
     FrameConc.grid_columnconfigure(0,weight=1)
@@ -278,112 +293,106 @@ def create_gui():
     FrameConc.grid_columnconfigure(3,weight=1)
     FrameConc.grid(row=0, column=0, ipadx=28, sticky="news")
     
+    ## frame for flow rate mode
     FrameFlowRate = ctk.CTkScrollableFrame(app)
     FrameFlowRate.grid_columnconfigure(0,weight=1)
     FrameFlowRate.grid_columnconfigure(1,weight=1)
     FrameFlowRate.grid_columnconfigure(2,weight=1)
     FrameFlowRate.grid_columnconfigure(3,weight=1)
-
-    # FramePlot = ctk.CTkFrame(app)
-    # FramePlot.grid(row=0, column=1, sticky="news")
-    # FramePlot.columnconfigure(0,weight=4)
-    # FramePlot.rowconfigure(0,weight=3)
     
-    #Choose Mode
-    #app.conc_button = ctk.CTkButton(app, text="Run",border_color="dark-blue")
-    #app.conc_button.grid(row=0,column=0,columnspan=4,padx=20,pady=5)
 
-    # Point Frame
-    Number_of_widgets = []
-    Number_of_widgets.append(Number_of_point)
+    # Set up the first variables in the concentraton mode frame
+    ## row for total flow rate input
+    total_flow_label = ctk.CTkLabel(FrameConc,text="Total flow", font = GUIfont)
+    total_flow_label.grid(row=0,column=0,padx=(20, 5), pady=(5,15), sticky="ew")
+    total_flow_equal_label = ctk.CTkLabel(FrameConc,text="=", font = GUIfont)
+    total_flow_equal_label.grid(row=0,column=1,padx=5, pady=(5,15), sticky="ew")
+    total_flow_entry = ctk.CTkEntry(FrameConc, placeholder_text="0 to 60", border_color="white", validate="key")
+    total_flow_entry.grid(row=0, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
+    total_flow_entry.bind('<FocusOut>', check_total_flow)
+    total_flow_entry.bind('<Return>',check_total_flow)
+    total_flow_unit_label = ctk.CTkLabel(FrameConc,text="sccm", font = GUIfont)
+    total_flow_unit_label.grid(row=0, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
 
+    # row for concentration setpoint
     Point_label = ctk.CTkLabel(FrameConc, text="Point 1", font=GUIfont)
-    Point_label.grid(row=0, column=0, padx=(20, 5), pady=5, sticky="ew")
+    Point_label.grid(row=1, column=0, padx=(20, 5), pady=(15,5), sticky="ew")
     Point_label_list.append(Point_label)
     Point_equal_label = ctk.CTkLabel(FrameConc, text="=", font=GUIfont)
-    Point_equal_label.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+    Point_equal_label.grid(row=1, column=1, padx=5, pady=(15,5), sticky="ew")
     Point_equal_label_list.append(Point_equal_label)
     Point_entry = ctk.CTkEntry(FrameConc, placeholder_text="0 to 30", border_color="white", validate="key")
-    Point_entry.grid(row=0, column=2, columnspan=1, padx=5, pady=5, sticky="ew")
+    Point_entry.grid(row=1, column=2, columnspan=1, padx=5, pady=(15,5), sticky="ew")
     Point_entry.bind('<FocusOut>', check_point)
     Point_entry.bind('<Return>', check_point)
     Point_entry_list.append(Point_entry)
     Point_unit_label = ctk.CTkLabel(FrameConc, text="%", font=GUIfont)
-    Point_unit_label.grid(row=0, column=3, padx=(5, 20), pady=5, sticky="ew")
+    Point_unit_label.grid(row=1, column=3, padx=(5, 20), pady=(15,5), sticky="ew")
     Point_unit_label_list.append(Point_unit_label)
 
-    # Duration
+    # row for duration time setting 
     Duration_label = ctk.CTkLabel(FrameConc, text="Duration", font=GUIfont)
-    Duration_label.grid(row=1, column=0, padx=(20, 5), pady=5, sticky="ew")
+    Duration_label.grid(row=2, column=0, padx=(20, 5), pady=(5,15), sticky="ew")
     Duration_label_list.append(Duration_label)
     Duration_equal_label = ctk.CTkLabel(FrameConc, text="=", font=GUIfont)
-    Duration_equal_label.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+    Duration_equal_label.grid(row=2, column=1, padx=5, pady=(5,15), sticky="ew")
     Duration_equal_label_list.append(Duration_equal_label)
     Duration_entry = ctk.CTkEntry(FrameConc, placeholder_text="any + value", border_color="white", validate="key")
-    Duration_entry.grid(row=1, column=2, columnspan=1, padx=5, sticky="ew")
+    Duration_entry.grid(row=2, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
     Duration_entry_list.append(Duration_entry)
     Duration_entry.bind('<FocusOut>', check_duration)
     Duration_entry.bind('<Return>', check_duration)
     Duration_unit_label = ctk.CTkLabel(FrameConc, text="min", font=GUIfont)
-    Duration_unit_label.grid(row=1, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
+    Duration_unit_label.grid(row=2, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
     Duration_unit_label_list.append(Duration_unit_label)
 
+    # function for adding a new row of setpoint and duration time everytime its button is pressed
     def addpoint():
         global Number_of_point
         global Point_entry_list, Point_equal_label_list, Point_label_list, Point_unit_label_list, Duration_entry_list, Duration_equal_label_list, Duration_label_list, Duration_unit_label_list
-        Number_of_point += 1
+        Number_of_point += 1 #increment the total number of setpoints by 1
         
-        if Number_of_point >= 1:
-            #for Number_of_point in Number_of_widgets:
-            #Number_of_widgets.append(Number_of_point)
+        if Number_of_point >= 1: #almost a repeat of what it is above
             Point_label_new = ctk.CTkLabel(FrameConc, text="Point {}".format(Number_of_point), font=GUIfont)
-            Point_label_new.grid(row=Number_of_point*2, column=0, padx=(20, 5), pady=5, sticky="ew")
+            Point_label_new.grid(row=Number_of_point*2+1, column=0, padx=(20, 5), pady=(15,5), sticky="ew")
             Point_label_list.append(Point_label_new)
             Point_equal_label_new = ctk.CTkLabel(FrameConc, text="=", font=GUIfont)
-            Point_equal_label_new.grid(row=Number_of_point*2, column=1, padx=5, pady=5, sticky="ew")
+            Point_equal_label_new.grid(row=Number_of_point*2+1, column=1, padx=5, pady=(15,5), sticky="ew")
             Point_equal_label_list.append(Point_equal_label_new)
             Point_entry_new = ctk.CTkEntry(FrameConc, placeholder_text="0 to 30", border_color="white", validate="key")
-            Point_entry_new.grid(row=Number_of_point*2, column=2, columnspan=1, padx=5, pady=5, sticky="ew")
+            Point_entry_new.grid(row=Number_of_point*2+1, column=2, columnspan=1, padx=5, pady=(15,5), sticky="ew")
             Point_entry_new.bind('<FocusOut>', check_point)
             Point_entry_new.bind('<Return>', check_point)
             Point_entry_list.append(Point_entry_new)
             Point_unit_label_new = ctk.CTkLabel(FrameConc, text="%", font=GUIfont)
-            Point_unit_label_new.grid(row=Number_of_point*2, column=3, padx=(5, 20), pady=5, sticky="ew")
+            Point_unit_label_new.grid(row=Number_of_point*2+1, column=3, padx=(5, 20), pady=(15,5), sticky="ew")
             Point_unit_label_list.append(Point_unit_label_new)
 
-            # Duration
             Duration_label_new = ctk.CTkLabel(FrameConc, text="Duration", font=GUIfont)
-            Duration_label_new.grid(row=Number_of_point*2+1, column=0, padx=(20, 5), pady=5, sticky="ew")
+            Duration_label_new.grid(row=Number_of_point*2+2, column=0, padx=(20, 5), pady=(5,15), sticky="ew")
             Duration_label_list.append(Duration_label_new)
             Duration_equal_label_new = ctk.CTkLabel(FrameConc, text="=", font=GUIfont)
-            Duration_equal_label_new.grid(row=Number_of_point*2+1, column=1, padx=5, pady=5, sticky="ew")
+            Duration_equal_label_new.grid(row=Number_of_point*2+2, column=1, padx=5, pady=(5,15), sticky="ew")
             Duration_equal_label_list.append(Duration_equal_label_new)
             Duration_entry_new = ctk.CTkEntry(FrameConc, placeholder_text="any + value", border_color="white", validate="key")
-            Duration_entry_new.grid(row=Number_of_point*2+1, column=2, columnspan=1, padx=5, sticky="ew")
+            Duration_entry_new.grid(row=Number_of_point*2+2, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
             Duration_entry_list.append(Duration_entry_new)
             Duration_entry_new.bind('<FocusOut>', check_duration)
             Duration_entry_new.bind('<Return>', check_duration)
             Duration_unit_label_new = ctk.CTkLabel(FrameConc, text="min", font=GUIfont)
-            Duration_unit_label_new.grid(row=Number_of_point*2+1, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
+            Duration_unit_label_new.grid(row=Number_of_point*2+2, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
             Duration_unit_label_list.append(Duration_unit_label_new)
         
-        
         return Number_of_point
-     
+    
+    # fuction for removing the last row of setpoint and duration time
     def RemovePoint():
         global Number_of_point
-        if Number_of_point > 1:
-            Number_of_point -= 1
-            #Number_of_widgets.pop()
-            #Point_label_list[-1].grid_forget()
-            #Point_equal_label_list[-1].grid_forget()
-            #Point_unit_label_list[-1].grid_forget()
-            #Duration_label_list[-1].grid_forget()
-            #Duration_equal_label_list[-1].grid_forget()
-            #Duration_entry_list[-1].grid_forget()
-            #Duration_unit_label_list[-1].grid_forget()
+        if Number_of_point > 1: #permit removal only if the number of points is greater than 1
+            Number_of_point -= 1 #decrease the total number of point by 1
 
-            Point_label_list[-1].destroy()
+            #destroy all widgets in this row and delete them from their storing lists and checking lists
+            Point_label_list[-1].destroy() 
             del Point_label_list[-1]
             Point_equal_label_list[-1].destroy()
             del Point_equal_label_list[-1]
@@ -411,10 +420,8 @@ def create_gui():
             check_duration(Duration_entry)
         return Number_of_point
     
-     # Duration Frame
-    Number_of_duration_widgets = []
-    Number_of_duration_widgets.append(Number_of_flow)
-
+    # Variables and functions in the Flow Rate Mode, everything is the same as in the concentration mode,
+    # just different variable names and text
     Flow_label = ctk.CTkLabel(FrameFlowRate, text="Flow Rate 1", font=GUIfont)
     Flow_label.grid(row=0, column=0, padx=(20, 5), pady=5, sticky="ew")
     Flow_label_list.append(Flow_label)
@@ -432,18 +439,18 @@ def create_gui():
 
     # Duration
     Flow_Duration_label = ctk.CTkLabel(FrameFlowRate, text="Duration", font=GUIfont)
-    Flow_Duration_label.grid(row=1, column=0, padx=(20, 5), pady=5, sticky="ew")
+    Flow_Duration_label.grid(row=1, column=0, padx=(20, 5), pady=(5,15), sticky="ew")
     Flow_Duration_label_list.append(Flow_Duration_label)
     Flow_Duration_equal_label = ctk.CTkLabel(FrameFlowRate, text="=", font=GUIfont)
-    Flow_Duration_equal_label.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+    Flow_Duration_equal_label.grid(row=1, column=1, padx=5, pady=(5,15), sticky="ew")
     Flow_Duration_equal_label_list.append(Flow_Duration_equal_label)
     Flow_Duration_entry = ctk.CTkEntry(FrameFlowRate, placeholder_text="any + value", border_color="white", validate="key")
-    Flow_Duration_entry.grid(row=1, column=2, columnspan=1, padx=5, sticky="ew")
+    Flow_Duration_entry.grid(row=1, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
     Flow_Duration_entry_list.append(Flow_Duration_entry)
     Flow_Duration_entry.bind('<FocusOut>', check_flow_duration)
     Flow_Duration_entry.bind('<Return>', check_flow_duration)
     Flow_Duration_unit_label = ctk.CTkLabel(FrameFlowRate, text="min", font=GUIfont)
-    Flow_Duration_unit_label.grid(row=1, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
+    Flow_Duration_unit_label.grid(row=1, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
     Flow_Duration_unit_label_list.append(Flow_Duration_unit_label)
 
     def addflow():
@@ -455,34 +462,34 @@ def create_gui():
             #for Number_of_point in Number_of_widgets:
             #Number_of_widgets.append(Number_of_point)
             Flow_label_new = ctk.CTkLabel(FrameFlowRate, text="Flow Rate {}".format(Number_of_flow), font=GUIfont)
-            Flow_label_new.grid(row=Number_of_flow*2, column=0, padx=(20, 5), pady=5, sticky="ew")
+            Flow_label_new.grid(row=Number_of_flow*2, column=0, padx=(20, 5), pady=(15,5), sticky="ew")
             Flow_label_list.append(Flow_label_new)
             Flow_equal_label_new = ctk.CTkLabel(FrameFlowRate, text="=", font=GUIfont)
-            Flow_equal_label_new.grid(row=Number_of_flow*2, column=1, padx=5, pady=5, sticky="ew")
+            Flow_equal_label_new.grid(row=Number_of_flow*2, column=1, padx=5, pady=(15,5), sticky="ew")
             Flow_equal_label_list.append(Flow_equal_label_new)
             Flow_entry_new = ctk.CTkEntry(FrameFlowRate, placeholder_text="0 to 100", border_color="white", validate="key")
-            Flow_entry_new.grid(row=Number_of_flow*2, column=2, columnspan=1, padx=5, pady=5, sticky="ew")
+            Flow_entry_new.grid(row=Number_of_flow*2, column=2, columnspan=1, padx=5, pady=(15,5), sticky="ew")
             Flow_entry_new.bind('<FocusOut>', check_flow)
             Flow_entry_new.bind('<Return>', check_flow)
             Flow_entry_list.append(Flow_entry_new)
             Flow_unit_label_new = ctk.CTkLabel(FrameFlowRate, text="sccm", font=GUIfont)
-            Flow_unit_label_new.grid(row=Number_of_flow*2, column=3, padx=(5, 20), pady=5, sticky="ew")
+            Flow_unit_label_new.grid(row=Number_of_flow*2, column=3, padx=(5, 20), pady=(15,5), sticky="ew")
             Flow_unit_label_list.append(Flow_unit_label_new)
 
             # Duration
             Flow_Duration_label_new = ctk.CTkLabel(FrameFlowRate, text="Duration", font=GUIfont)
-            Flow_Duration_label_new.grid(row=Number_of_flow*2+1, column=0, padx=(20, 5), pady=5, sticky="ew")
+            Flow_Duration_label_new.grid(row=Number_of_flow*2+1, column=0, padx=(20, 5), pady=(5,15), sticky="ew")
             Flow_Duration_label_list.append(Flow_Duration_label_new)
             Flow_Duration_equal_label_new = ctk.CTkLabel(FrameFlowRate, text="=", font=GUIfont)
-            Flow_Duration_equal_label_new.grid(row=Number_of_flow*2+1, column=1, padx=5, pady=5, sticky="ew")
+            Flow_Duration_equal_label_new.grid(row=Number_of_flow*2+1, column=1, padx=5, pady=(5,15), sticky="ew")
             Flow_Duration_equal_label_list.append(Flow_Duration_equal_label_new)
             Flow_Duration_entry_new = ctk.CTkEntry(FrameFlowRate, placeholder_text="any + value", border_color="white", validate="key")
-            Flow_Duration_entry_new.grid(row=Number_of_flow*2+1, column=2, columnspan=1, padx=5, sticky="ew")
+            Flow_Duration_entry_new.grid(row=Number_of_flow*2+1, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
             Flow_Duration_entry_list.append(Flow_Duration_entry_new)
             Flow_Duration_entry_new.bind('<FocusOut>', check_flow_duration)
             Flow_Duration_entry_new.bind('<Return>', check_flow_duration)
             Flow_Duration_unit_label_new = ctk.CTkLabel(FrameFlowRate, text="min", font=GUIfont)
-            Flow_Duration_unit_label_new.grid(row=Number_of_flow*2+1, column=3, padx=(5, 20), pady=(10, 5), sticky="ew")
+            Flow_Duration_unit_label_new.grid(row=Number_of_flow*2+1, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
             Flow_Duration_unit_label_list.append(Flow_Duration_unit_label_new)
         return Number_of_flow
      
@@ -490,14 +497,6 @@ def create_gui():
         global Number_of_flow
         if Number_of_flow > 1:
             Number_of_flow -= 1
-            #Number_of_widgets.pop()
-            #Point_label_list[-1].grid_forget()
-            #Point_equal_label_list[-1].grid_forget()
-            #Point_unit_label_list[-1].grid_forget()
-            #Duration_label_list[-1].grid_forget()
-            #Duration_equal_label_list[-1].grid_forget()
-            #Duration_entry_list[-1].grid_forget()
-            #Duration_unit_label_list[-1].grid_forget()
 
             Flow_label_list[-1].destroy()
             del Flow_label_list[-1] 
@@ -527,17 +526,18 @@ def create_gui():
             check_flow(Flow_Duration_entry)
         return Number_of_flow
     
+    # function for changing from concentration mode to flow rate mode
     def change_to_flow():
-        global Mode, Flow_error
-        FrameConc.grid_forget()
-        FrameFlowRate.grid(row=0, column=0, ipadx=28, sticky="news")
-        add_conc_button.grid_forget()
-        add_flow_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5)
-        remove_conc_button.grid_forget()
-        remove_flow_button.grid(row=2,column=0,columnspan=1,padx=20,pady=5)
-        change_to_flow_button.grid_forget()
-        change_to_conc_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5)
-        app.input_alert_label.configure(text="")
+        global Mode
+        FrameConc.grid_forget() #hide the concentration mode frame
+        FrameFlowRate.grid(row=0, column=0, ipadx=28, sticky="news") #show the flow rate mode frame
+        add_conc_button.grid_forget() #hide the button for adding concentration setpoints
+        add_flow_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5) #show the button for adding flow rate setpoints
+        remove_conc_button.grid_forget() #hide the button for removing concentration setpoints
+        remove_flow_button.grid(row=2,column=0,columnspan=1,padx=20,pady=5) #show the button for removing flow rate setpoints
+        change_to_flow_button.grid_forget() #hide the button for this change function 
+        change_to_conc_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5) #show the button for changing from flow rate to concentration mode
+        app.input_alert_label.configure(text="") #re-initialise the error message for the new mode
         if sum(check_val_flow) == len(check_val_flow) and sum(check_val_flow_duration) == len(check_val_flow_duration):
             app.input_alert_label.configure(text="")
         else:
@@ -545,8 +545,9 @@ def create_gui():
         Mode = "flow"
         return Mode
 
+    #vice versa of the change_to_flow function
     def change_to_conc():
-        global Mode, Conc_error
+        global Mode
         FrameFlowRate.grid_forget()
         FrameConc.grid(row=0, column=0, ipadx=28, sticky="news")
         add_flow_button.grid_forget()
@@ -563,31 +564,38 @@ def create_gui():
         Mode = "conc"
         return Mode
 
+    # add subscripts
     SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
     O2_string = "O2 Concentration"
 
-    add_conc_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addpoint())
-    add_conc_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5)
-    add_flow_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addflow())
-    remove_conc_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemovePoint())
+    #widgets locating in the master app frame
+    ## buttons 
+    add_conc_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addpoint()) #button to add concentration setpoint
+    add_conc_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5) #show the add_conc_button as the mode is defaulted as concentration mode
+    add_flow_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addflow()) #button to add flow rate setpoint, not shown until the app is in flow rate mode
+    remove_conc_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemovePoint()) #button to remove concentration setpoint
     remove_conc_button.grid(row=Number_of_point+1,column=0,columnspan=1,padx=20,pady=5)
-    remove_flow_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemoveFlow())
-    change_to_flow_button = ctk.CTkButton(app, text="Flow Rate",border_color="dark-blue", command=lambda:change_to_flow())
+    remove_flow_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemoveFlow()) #button to remove flow rate setpoint, not shown yet
+    change_to_flow_button = ctk.CTkButton(app, text="Flow Rate",border_color="dark-blue", command=lambda:change_to_flow()) #button to change concentration mode into flow rate mode
     change_to_flow_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5)
-    change_to_conc_button = ctk.CTkButton(app, text=O2_string.translate(SUB),border_color="dark-blue", command=lambda:change_to_conc())
+    change_to_conc_button = ctk.CTkButton(app, text=O2_string.translate(SUB),border_color="dark-blue", command=lambda:change_to_conc()) #button to change flow rate mode into concentration mode, not shown yet
 
+    # error message
+    app.input_alert_label = ctk.CTkLabel(app, text="", font=GUIfont, text_color=("red"))
+    app.input_alert_label.grid(row=4, column=0, columnspan=1, padx=10, pady=(0, 5), sticky="ew")
+
+    # function to submit all input variables
+    # incorporate command line scheduling and flow control here
     def runGUI():
         print(Mode)
-        keyboard.press(Key.enter)
+        keyboard.press(Key.enter) #simulate pressing and release of the enter key in case the user didn't bind the last entry they made before pressing run
         keyboard.release(Key.enter)
-        if Mode == "conc":
-            check_point(Point_entry)
+        if Mode == "conc": #detect mode and submit the corresponding entries
+            check_point(Point_entry) #run the check functions again, assuming the user didn't trigger them before submitting for some reason
             check_duration(Duration_entry)
-            print(sum(check_val_point), len(check_val_point))
-            print(sum(check_val_duration), len(check_val_duration))
-            if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration):
+            check_total_flow(total_flow_entry)
+            if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration): #allow variable inputs only if there's no error in all inputs
                 print("run")
-                print(Point_entry_list[i] for i in Point_entry_list)
             elif sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
         elif Mode == "flow":
@@ -599,12 +607,12 @@ def create_gui():
                 print("Bruh")
 
 
-    #run button
+    #add run button
     run_button = ctk.CTkButton(app, text="Run",border_color="dark-blue", command=lambda: runGUI())
     run_button.grid(row=5,column=0,columnspan=1,padx=20,pady=(5,20))
 
 
-    #liveplot
+    #liveplot (some .grid positioning variables are changed to fit things into the same GUI )
     bv1=ctk.BooleanVar(value=False)
     setpoint=ctk.StringVar(value='0')
     def stopplotting():
