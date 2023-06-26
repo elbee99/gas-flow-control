@@ -52,11 +52,11 @@ def flow_control(total_flow, target_O2_set_point=15, control_time = None):
             else:
                 controlled_system(total_flow,target_O2_set_point,oxygen_percent)
 
-def flow_control_basic(total_flow=100,target_O2_setpoint=15):
+def flow_control_basic(total_flow=100,oxygen_flow_rate=15):
     flow_controller_O2 = FlowController(port='COM{}'.format(3))
     flow_controller_Ar = FlowController(port='COM{}'.format(5))
-    flow_controller_O2.set_flow_rate(total_flow*target_O2_setpoint/100)
-    flow_controller_Ar.set_flow_rate(total_flow-(total_flow*target_O2_setpoint/100))
+    flow_controller_O2.set_flow_rate(oxygen_flow_rate)
+    flow_controller_Ar.set_flow_rate(total_flow-oxygen_flow_rate)
     return float(read_O2_sensor())*10e-3
     
 
