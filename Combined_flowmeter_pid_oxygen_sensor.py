@@ -19,7 +19,7 @@ flow_controller_Ar.set_gas('Ar')
 
 # flow_controller_O2.set_flow_rate(25)
 # flow_controller_Ar.set_flow_rate(75)
-total_flow = 100 # set the total flowrate 
+total_flow = 50 # set the total flowrate 
 setpoint = 0
 def printtext():
     global e, setpoint

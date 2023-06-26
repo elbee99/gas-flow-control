@@ -1,11 +1,11 @@
 from alicat_flowmeter_control import flow_control_basic, flow_control
 from alicat import FlowController
 
-# flow_controller_O2 = FlowController(port='COM3')
-# flow_controller_Ar = FlowController(port='COM5')
+flow_controller_O2 = FlowController(port='COM3')
+flow_controller_Ar = FlowController(port='COM5')
 
-# flow_controller_O2.set_gas('O2')
-# flow_controller_Ar.set_gas('Ar')
+flow_controller_O2.set_gas('O2')
+flow_controller_Ar.set_gas('Ar')
 
 
 import tkinter as tk
@@ -20,7 +20,7 @@ import datetime
 from oxygen_sensor import read_O2_sensor
 from oxygen_plotting import oxygen_plotting
 from pynput.keyboard import Key, Controller
-
+from simple_pid import PID
 keyboard = Controller()
 
 #extract entered values from the respective entry_lists
@@ -640,10 +640,32 @@ def create_gui():
             check_point(Point_entry) #run the check functions again, assuming the user didn't trigger them before submitting for some reason
             check_duration(Duration_entry)
             check_total_flow(total_flow_entry)
-            if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration): #allow variable inputs only if there's no error in all inputs
+            if sum(check_val_total_flow) == len(check_val_total_flow) and sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration): #allow variable inputs only if there's no error in all inputs
                 print("run")
-                
-            elif sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
+                for pos,i in enumerate(Point_entry_list): #checks all concentration setpoint entries everytime a binidng event occurs in one of them
+                    print(i.get())
+                    setpoint.set(float(i.get())) #set the setpoint to the value in the entry
+                    start_time_of_point_entry = time.time()
+                    pid = PID(1,0.02,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
+                    def controlled_system(total_flow, O2_set_point, current_O2_percent):
+                        flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
+                        flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
+                        # print(current_O2_percent)
+                        return current_O2_percent
+                    while time.time()< start_time_of_point_entry + float(Duration_entry_list[pos].get())*60:
+                        oxygen_percent = float(read_O2_sensor())*10e-5
+                        print(oxygen_percent, float(i.get()))
+                        if abs(oxygen_percent-float(i.get())) < 4:
+                            PID_setpoint = pid(oxygen_percent) #this is the setpoint required the PID controller
+                            #we need to get current value and feed back into the PID controller
+                            print(PID_setpoint)
+                            controlled_system(float(total_flow_entry.get()),PID_setpoint,oxygen_percent)
+                        else:
+                            controlled_system(float(total_flow_entry.get()),float(i.get()),oxygen_percent)
+                        oxygen_plotting()  
+                        time.sleep(0.5)
+
+            elif sum(check_val_total_flow) != len(check_val_total_flow) or sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
             
         elif Mode == "flow":
@@ -656,10 +678,8 @@ def create_gui():
                     flow_control_basic(float(flow_total_flow_entry.get()),float(i.get()))
                     start_time_of_point_entry = time.time()
                     while time.time()< start_time_of_point_entry + float(Flow_Duration_entry_list[pos].get())*60:
-                        global loop
-                        while loop:
-                            oxygen_plotting()  
-                            time.sleep(0.5)
+                        oxygen_plotting()  
+                        time.sleep(0.5)
             else:
                 print("Bruh")
             
@@ -697,6 +717,7 @@ def create_gui():
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('O$_2$ conc. (%)')
     line, = ax.plot([],[])
+    line2, = ax.plot([],[])
     canvas = FigureCanvasTkAgg(fig,master=app)
     canvas.get_tk_widget().grid(row=0, column=1, columnspan=4, sticky="nsew")
 
@@ -723,10 +744,12 @@ def create_gui():
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
             ydata = np.append(ydata,float(oxygen_ppm)/10e3)
-            setpointstring=setpoint.get()
-            setpoint_line = np.ones(len(xdata))*float(setpointstring)
-            ax.plot(xdata,setpoint_line,'r--')
+            xdata2, ydata2 = line2.get_xdata(),line2.get_ydata()
+            xdata2 = np.append(xdata2,current_time)
+            ydata2 = np.append(ydata2,float(setpoint.get()))
             line.set_data(xdata,ydata)
+            line2.set_data(xdata2,ydata2)
+            line2.set_linestyle('--')
             ax.relim()
             ax.autoscale_view()
 
