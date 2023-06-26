@@ -9,5 +9,5 @@ print(flow_controller_Ar.get())
 flow_controller_O2.set_gas('O2')
 flow_controller_Ar.set_gas('Ar')
 
-flow_controller_O2.set_flow_rate(0)
-flow_controller_Ar.set_flow_rate(0)
+flow_controller_O2.set_flow_rate(20)
+flow_controller_Ar.set_flow_rate(80)

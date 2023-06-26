@@ -646,7 +646,7 @@ def create_gui():
                     print(i.get())
                     setpoint.set(float(i.get())) #set the setpoint to the value in the entry
                     start_time_of_point_entry = time.time()
-                    pid = PID(1,0.02,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
+                    pid = PID(1,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
                     def controlled_system(total_flow, O2_set_point, current_O2_percent):
                         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
                         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
