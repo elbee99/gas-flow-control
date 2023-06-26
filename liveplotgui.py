@@ -1,11 +1,11 @@
 from alicat_flowmeter_control import flow_control
 from alicat import FlowController
 
-flow_controller_O2 = FlowController(port='COM3')
-flow_controller_Ar = FlowController(port='COM5')
+# flow_controller_O2 = FlowController(port='COM3')
+# flow_controller_Ar = FlowController(port='COM5')
 
-flow_controller_O2.set_gas('O2')
-flow_controller_Ar.set_gas('Ar')
+# flow_controller_O2.set_gas('O2')
+# flow_controller_Ar.set_gas('Ar')
 
 import tkinter as tk
 from tkinter import simpledialog
@@ -76,7 +76,7 @@ def main():
 
             
 
-            oxygen_ppm = read_O2_sensor()
+            oxygen_ppm = '5000'#read_O2_sensor()
             print(oxygen_ppm)
             oxygen_percent=float(oxygen_ppm)/10e3
             current_time = time.time()-start_time 

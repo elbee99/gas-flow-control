@@ -1,4 +1,4 @@
-from alicat_flowmeter_control import flow_control
+from alicat_flowmeter_control import flow_control_basic, flow_control
 from alicat import FlowController
 
 # flow_controller_O2 = FlowController(port='COM3')
@@ -280,7 +280,7 @@ def create_gui():
     app.title("Oxygen Control")
     app.rowconfigure(0,weight=1)
     app.columnconfigure(0,weight=2)
-    app.columnconfigure(1,weight=2)
+    app.columnconfigure(1,weight=4)
     GUIfont = ctk.CTkFont(family="Arial", size=12, weight="normal")
 
     # set frames
@@ -583,7 +583,6 @@ def create_gui():
     # error message
     app.input_alert_label = ctk.CTkLabel(app, text="", font=GUIfont, text_color=("red"))
     app.input_alert_label.grid(row=4, column=0, columnspan=1, padx=10, pady=(0, 5), sticky="ew")
-
     # function to submit all input variables
     # incorporate command line scheduling and flow control here
     def runGUI():
@@ -596,15 +595,25 @@ def create_gui():
             check_total_flow(total_flow_entry)
             if sum(check_val_point) == len(check_val_point) and sum(check_val_duration) == len(check_val_duration): #allow variable inputs only if there's no error in all inputs
                 print("run")
+                
             elif sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
+            
         elif Mode == "flow":
             check_flow(Flow_entry)
             check_flow_duration(Flow_Duration_entry)
             if sum(check_val_flow) == len(check_val_flow) and sum(check_val_flow_duration) == len(check_val_flow_duration):
                 print("run")
+                for pos,i in enumerate(Flow_entry_list): #checks all concentration setpoint entries everytime a binidng event occurs in one of them
+                    print(i.get())
+                    #flow_control_basic(float(total_flow_entry.get()),float(i.get()))
+                    start_time_of_point_entry = time.time()
+                    while time.time()< start_time_of_point_entry + float(Flow_Duration_entry_list[pos].get())*60:
+                        oxygen_plotting()  
+                        time.sleep(0.5)     
             else:
                 print("Bruh")
+            
 
 
     #add run button
@@ -658,7 +667,7 @@ def create_gui():
 
             
 
-            oxygen_ppm = read_O2_sensor()
+            oxygen_ppm = '70000'#read_O2_sensor()
             print(oxygen_ppm)
             oxygen_percent=float(oxygen_ppm)/10e3
             current_time = time.time()-start_time 
@@ -676,16 +685,15 @@ def create_gui():
 
             fig.canvas.flush_events()
             canvas = FigureCanvasTkAgg(fig,master=app)
-            canvas.get_tk_widget().grid(row=0, column=1, columnspan=4, sticky="nsew")
+            canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
             
             f.write(data_line)
             f.write('\n')
 
-            if bv1.get() == True:
-                plottingqueue = app.after(100000,oxygen_plotting())
-            else:
-                app.after_cancel(plottingqueue)
-
+            # if bv1.get() == True:
+            #     plottingqueue = app.after(oxygen_plotting())
+            # else:
+            #     app.after_cancel(plottingqueue)
     app.mainloop()
 
 
