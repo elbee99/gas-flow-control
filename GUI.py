@@ -316,7 +316,7 @@ def create_gui():
     app.columnconfigure(0,weight=3)
     app.columnconfigure(1,weight=4)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
-    app.dir_name = filedialog.askdirectory(initialdir = os.path.expanduser('~'),title = "Select directory")
+    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")))  
     # set frames
     ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
@@ -730,7 +730,7 @@ def create_gui():
     # create a button to define a file path for the data to be saved to
 
 
-    def oxygen_plotting(filename='oxygen_conc.txt'):
+    def oxygen_plotting(filename=save_file_path+".txt"):
         # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
@@ -741,7 +741,7 @@ def create_gui():
         """
         # check if the file exists, if not create it
         if not os.path.isfile(filename):
-            with open(filename+".txt", 'w') as f:
+            with open(filename, 'w') as f:
                 f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
                 f.write('Time (s)\tO2 conc. (ppm)\n')
         else:
