@@ -202,6 +202,29 @@ def create_gui():
     
     # check functions of the flow rate mode
     ## check total flow value in the flow rate mode
+    #import calibration.xlsx and perform a linear regression to get the expected O2 as a function of measured O2 using the data in the excel file
+
+    import pandas as pd
+    import numpy as np
+    
+    df = pd.read_excel("calibration.xlsx", sheet_name="Sheet1")
+
+    x = df["Measured O2"]
+    y = df["Expected O2"]
+
+    from scipy import stats
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+
+    #create a function that returns the expected O2 value given a measured O2 value using the linear regression return 0 if less than 0
+    def expected_O2(measured_O2):
+        if slope*measured_O2+intercept < 0:
+            return 0
+        else:
+            return slope*measured_O2+intercept
+    
+
+
+
     def check_total_flow_flow(text):
         global Mode
         text = flow_total_flow_entry.get()
@@ -656,7 +679,7 @@ def create_gui():
                     print(i.get())
                     setpoint.set(float(i.get())) #set the setpoint to the value in the entry
                     start_time_of_point_entry = time.time()
-                    pid = PID(0.9,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
+                    pid = PID(0.9,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= expected_O2(float(i.get()))) #PID controller with the setpoint being the concentration setpoint
                     def controlled_system(total_flow, O2_set_point, current_O2_percent):
                         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
                         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
