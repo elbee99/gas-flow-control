@@ -14,12 +14,15 @@ from tkinter import filedialog
 import customtkinter as ctk
 import numpy as np
 import os
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # plt.ioff()
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 import matplotlib
 import time
 import datetime
+
 from oxygen_sensor import read_O2_sensor
 from pynput.keyboard import Key, Controller
 from simple_pid import PID
@@ -316,6 +319,7 @@ def create_gui():
     app.columnconfigure(0,weight=3)
     app.columnconfigure(1,weight=4)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
+    # open dialog to set save file path
     save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")))  
     # set frames
     ## frame for concentration mode
@@ -719,7 +723,8 @@ def create_gui():
     # check to see if it is COM3 before running
     # Will try optimise so it selects automatically soon
 
-    fig, ax = plt.subplots()
+    fig = Figure()
+    ax = fig.add_subplot(111)
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('O$_2$ conc. (%)')
     line, = ax.plot([],[])
@@ -781,11 +786,13 @@ def create_gui():
             line2.set_linestyle('--')
             ax.relim()
             ax.autoscale_view()
-
-            fig.canvas.flush_events()
-            canvas = FigureCanvasTkAgg(fig,master=app)
-            canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
-            
+            fig.canvas.flush_events()           
+            # canvas = FigureCanvasTkAgg(fig,master=app)
+            # canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
+            canvas.draw()
+            # toolbar = NavigationToolbar2Tk(canvas, app)
+            # toolbar.update()
+            # canvas.get_tk_widget().grid(row=1, column=1, sticky="nsew")
             f.write(data_line)
             f.write('\n')
 
