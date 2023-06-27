@@ -1,11 +1,11 @@
 from alicat_flowmeter_control import flow_control_basic, flow_control
 from alicat import FlowController
 
-flow_controller_O2 = FlowController(port='COM3')
-flow_controller_Ar = FlowController(port='COM5')
+# flow_controller_O2 = FlowController(port='COM3')
+# flow_controller_Ar = FlowController(port='COM5')
 
-flow_controller_O2.set_gas('O2')
-flow_controller_Ar.set_gas('Ar')
+# flow_controller_O2.set_gas('O2')
+# flow_controller_Ar.set_gas('Ar')
 
 
 import tkinter as tk
@@ -14,15 +14,12 @@ from tkinter import filedialog
 import customtkinter as ctk
 import numpy as np
 import os
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 # plt.ioff()
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 import matplotlib
 import time
 import datetime
-
 from oxygen_sensor import read_O2_sensor
 from pynput.keyboard import Key, Controller
 from simple_pid import PID
@@ -63,6 +60,8 @@ check_val_flow_total_flow = [1]
 check_val_flow = [1]
 check_val_flow_duration=[1]
 
+# list of message functions
+message_list = []
 #Current mode the user is interacting with
 Mode="conc"
 
@@ -84,6 +83,13 @@ def create_gui():
     
     # check functions of the concentration mode
     ## check total flow value
+    def flow_warning():
+        if messagebox.askyesno("Oxygen Control", "Total flow is exceeding 60 sccm but under 100 sccm. Are your stage type and temperature setting compatible with this flow rate?"):
+                                total_flow_entry.configure(border_color = "white")
+                                check_val_total_flow[0]=True
+        else:
+            total_flow_entry.configure(border_color = "red")
+            check_val_total_flow[0]=False
     def check_total_flow(text):
         global Mode
         text = total_flow_entry.get()
@@ -94,8 +100,9 @@ def create_gui():
                     if 0 < value <= 60: #restrict value range
                         total_flow_entry.configure(border_color = "white") #configure border color of the corresponding entry cell
                         check_val_total_flow[0]=True #stores True/False value at the corresponding index along the list
-                    else: #if the value is out of range
-                        total_flow_entry.configure(border_color = "red")
+                    elif 60 < value <= 100: #if the value is out of range
+                        flow_warning()
+                    else:
                         check_val_total_flow[0]=False
                 except ValueError: #if the entry is not a number
                     total_flow_entry.configure(border_color = "red")
@@ -202,29 +209,6 @@ def create_gui():
     
     # check functions of the flow rate mode
     ## check total flow value in the flow rate mode
-    #import calibration.xlsx and perform a linear regression to get the expected O2 as a function of measured O2 using the data in the excel file
-
-    import pandas as pd
-    import numpy as np
-    
-    df = pd.read_excel("calibration.xlsx", sheet_name="Sheet1")
-
-    x = df["Measured O2"]
-    y = df["Expected O2"]
-
-    from scipy import stats
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-
-    #create a function that returns the expected O2 value given a measured O2 value using the linear regression return 0 if less than 0
-    def expected_O2(measured_O2):
-        if slope*measured_O2+intercept < 0:
-            return 0
-        else:
-            return slope*measured_O2+intercept
-    
-
-
-
     def check_total_flow_flow(text):
         global Mode
         text = flow_total_flow_entry.get()
@@ -235,6 +219,8 @@ def create_gui():
                     if 0 < value <= 60: #restrict value range
                         flow_total_flow_entry.configure(border_color = "white") #configure border color of the corresponding entry cell
                         check_val_flow_total_flow[0]=True #stores True/False value at the corresponding index along the list
+                    elif 60 < value <= 100: #if the value is out of range
+                        flow_warning()
                     else: #if the value is out of range
                         flow_total_flow_entry.configure(border_color = "red")
                         check_val_flow_total_flow[0]=False
@@ -336,16 +322,15 @@ def create_gui():
         
     # master app setup
     app = ctk.CTk()
-    app.geometry("1350x900")
+    app.geometry("900x600")
     app.title("Oxygen Control")
     app.rowconfigure(0,weight=1)
     app.columnconfigure(0,weight=3)
-    app.columnconfigure(1,weight=4)
+    app.columnconfigure(1,weight=3)
+    app.columnconfigure(2,weight=3)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
-    # open dialog to set save file path
-    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",
-                                                  defaultextension=".txt",
-                                                  filetypes = (("txt files","*.txt"),("all files","*.*")))  
+    titlefont = ctk.CTkFont(family="Arial", size=16, weight="bold")
+    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")))  
     # set frames
     ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
@@ -362,6 +347,15 @@ def create_gui():
     FrameFlowRate.grid_columnconfigure(1,weight=1)
     FrameFlowRate.grid_columnconfigure(2,weight=1)
     FrameFlowRate.grid_columnconfigure(3,weight=1)
+
+    FrameLog = ctk.CTkFrame(app)
+    FrameLog.grid(row=0, column=2, sticky="nsew")
+    FrameLog.columnconfigure(0,weight=1)
+    title_label = ctk.CTkLabel(FrameLog, text="System Log", font=titlefont)
+    title_label.grid(row=0, column=0, padx=5, pady=(5,15), sticky="w")
+    message = ctk.CTkTextbox(FrameLog, font=GUIfont)
+    message.grid(row=1, column=0, rowspan=3, sticky = "nsew")
+    message.configure(state="disabled")
     
 
     # Set up the first variables in the concentraton mode frame
@@ -372,7 +366,7 @@ def create_gui():
     total_flow_equal_label.grid(row=0,column=1,padx=5, pady=(5,15), sticky="ew")
     total_flow_entry = ctk.CTkEntry(FrameConc, placeholder_text="0 to 60", border_color="white", validate="key")
     total_flow_entry.grid(row=0, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
-    total_flow_entry.bind('<FocusOut>', check_total_flow)
+    #total_flow_entry.bind('<FocusOut>', check_total_flow)
     total_flow_entry.bind('<Return>',check_total_flow)
     total_flow_unit_label = ctk.CTkLabel(FrameConc,text="sccm", font = GUIfont)
     total_flow_unit_label.grid(row=0, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
@@ -497,7 +491,7 @@ def create_gui():
     flow_total_flow_equal_label.grid(row=0,column=1,padx=5, pady=(5,15), sticky="ew")
     flow_total_flow_entry = ctk.CTkEntry(FrameFlowRate, placeholder_text="0 to 60", border_color="white", validate="key")
     flow_total_flow_entry.grid(row=0, column=2, columnspan=1, padx=5, pady=(5,15), sticky="ew")
-    flow_total_flow_entry.bind('<FocusOut>', check_total_flow_flow)
+    #flow_total_flow_entry.bind('<FocusOut>', check_total_flow_flow)
     flow_total_flow_entry.bind('<Return>',check_total_flow_flow)
     flow_total_flow_unit_label = ctk.CTkLabel(FrameFlowRate,text="sccm", font = GUIfont)
     flow_total_flow_unit_label.grid(row=0, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
@@ -681,12 +675,13 @@ def create_gui():
                     print(i.get())
                     setpoint.set(float(i.get())) #set the setpoint to the value in the entry
                     start_time_of_point_entry = time.time()
-                    pid = PID(0.9,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= expected_O2(float(i.get()))) #PID controller with the setpoint being the concentration setpoint
+                    pid = PID(0.9,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
                     def controlled_system(total_flow, O2_set_point, current_O2_percent):
                         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
                         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
                         # print(current_O2_percent)
                         return current_O2_percent
+                    message.insert(index="end", text="Now on Point {}".format(pos+1)+"\n")
                     while time.time()< start_time_of_point_entry + float(Duration_entry_list[pos].get())*60:
                         oxygen_percent = float(read_O2_sensor())*10e-5
                         print(oxygen_percent, float(i.get()))
@@ -697,15 +692,17 @@ def create_gui():
                             controlled_system(float(total_flow_entry.get()),PID_setpoint,oxygen_percent)
                         else:
                             controlled_system(float(total_flow_entry.get()),float(i.get()),oxygen_percent)
+                        
                         oxygen_plotting()  
                         time.sleep(0.5)
-
+                    
             elif sum(check_val_total_flow) != len(check_val_total_flow) or sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
             
         elif Mode == "flow":
             check_flow(Flow_entry)
             check_flow_duration(Flow_Duration_entry)
+            check_total_flow_flow(flow_total_flow_entry)
             if sum(check_val_flow_total_flow) == len(check_val_flow_total_flow) and sum(check_val_flow) == len(check_val_flow) and sum(check_val_flow_duration) == len(check_val_flow_duration):
                 print("run")
                 for pos,i in enumerate(Flow_entry_list): #checks all concentration setpoint entries everytime a binidng event occurs in one of them
@@ -748,19 +745,18 @@ def create_gui():
     # check to see if it is COM3 before running
     # Will try optimise so it selects automatically soon
 
-    fig = Figure()
-    ax = fig.add_subplot(111)
+    fig, ax = plt.subplots()
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('O$_2$ conc. (%)')
     line, = ax.plot([],[])
     line2, = ax.plot([],[])
     canvas = FigureCanvasTkAgg(fig,master=app)
-    canvas.get_tk_widget().grid(row=0, column=1, columnspan=4, sticky="nsew")
+    canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
 
     # create a button to define a file path for the data to be saved to
 
 
-    def oxygen_plotting(filename=save_file_path):
+    def oxygen_plotting(filename=save_file_path+".txt"):
         # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
@@ -810,13 +806,11 @@ def create_gui():
             line2.set_linestyle('--')
             ax.relim()
             ax.autoscale_view()
-            fig.canvas.flush_events()           
-            # canvas = FigureCanvasTkAgg(fig,master=app)
-            # canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
-            canvas.draw()
-            # toolbar = NavigationToolbar2Tk(canvas, app)
-            # toolbar.update()
-            # canvas.get_tk_widget().grid(row=1, column=1, sticky="nsew")
+
+            fig.canvas.flush_events()
+            canvas = FigureCanvasTkAgg(fig,master=app)
+            canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
+            
             f.write(data_line)
             f.write('\n')
 
@@ -825,9 +819,24 @@ def create_gui():
             # else:
             #     app.after_cancel(plottingqueue)
     
+    # Stop button and termination function
+    def panic():
+        if messagebox.askokcancel("Oxygen Control", "WARNING: All gas flow will be zeroed."):
+            flow_controller_O2.set_flow_rate(0)
+            flow_controller_Ar.set_flow_rate(0)
+            if messagebox.askokcancel("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
+                if messagebox.askokcancel("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):
+                    loop == False
+                    app.destroy()
+            else:
+                flow_controller_O2.set_flow_rate(30/100)
+                flow_controller_Ar.set_flow_rate(30/100)
     
+    stop_button = ctk.CTkButton(app, text="STOP",border_color="red",fg_color="red", font=('Arial',18,"bold"), command=lambda:panic())
+    stop_button.grid(row=2, column=2, rowspan=3, columnspan=1, padx=20, pady=5, ipady=50)
     def on_closing():
-        global loop
+        total_flow_entry.unbind()
+        flow_total_flow_entry.unbind()
         if messagebox.askokcancel("Oxygen Control", "Do you want to quit?"):
             loop == False
             app.destroy()
