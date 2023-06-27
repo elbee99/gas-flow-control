@@ -330,9 +330,8 @@ def create_gui():
     app.columnconfigure(2,weight=3)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
     titlefont = ctk.CTkFont(family="Arial", size=16, weight="bold")
-    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",
-                                                  defaultextension=".txt",
-                                                  filetypes = (("txt files","*.txt"),("all files","*.*")))    # set frames
+    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")))  
+    # set frames
     ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
     FrameConc.grid(row=0, column=0, ipadx=28, sticky="news")
@@ -757,7 +756,7 @@ def create_gui():
     # create a button to define a file path for the data to be saved to
 
 
-    def oxygen_plotting(filename=save_file_path):
+    def oxygen_plotting(filename=save_file_path+".txt"):
         # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
@@ -808,7 +807,9 @@ def create_gui():
             line2.set_linestyle('--')
             ax.relim()
             ax.autoscale_view()
-            canvas.draw()
+
+            fig.canvas.flush_events()
+            canvas = FigureCanvasTkAgg(fig,master=app)
             canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
             
             f.write(data_line)
@@ -824,10 +825,13 @@ def create_gui():
         if messagebox.askokcancel("Oxygen Control", "WARNING: All gas flow will be zeroed."):
             flow_controller_O2.set_flow_rate(0)
             flow_controller_Ar.set_flow_rate(0)
-            if messagebox.showwarning("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
-                if messagebox.showwarning("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):
+            if messagebox.askokcancel("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
+                if messagebox.askokcancel("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):
                     loop == False
                     app.destroy()
+            else:
+                flow_controller_O2.set_flow_rate(30/100)
+                flow_controller_Ar.set_flow_rate(30/100)
     
     stop_button = ctk.CTkButton(app, text="STOP",border_color="red",fg_color="red", font=('Arial',18,"bold"), command=lambda:panic())
     stop_button.grid(row=2, column=2, rowspan=3, columnspan=1, padx=20, pady=5, ipady=50)
