@@ -723,20 +723,20 @@ def create_gui():
 
 
     #liveplot (some .grid positioning variables are changed to fit things into the same GUI )
-    bv1=ctk.BooleanVar(value=False)
-    setpoint=ctk.StringVar(value='0')
-    def stopplotting():
-        bv1.set(0)
-        print(bv1.get())
-    def plotting():
-        bv1.set(1)
-        oxygen_plotting()
-        print(bv1.get())
+    # bv1=ctk.BooleanVar(value=False)
+    # setpoint=ctk.StringVar(value='0')
+    # def stopplotting():
+    #     bv1.set(0)
+    #     print(bv1.get())
+    # def plotting():
+    #     bv1.set(1)
+    #     oxygen_plotting()
+    #     print(bv1.get())
     
-    start_plot_button=ctk.CTkButton(app, text="Start Plotting",border_color="dark-blue", command=plotting, font=('Arial',16))
-    start_plot_button.grid(row=1,column=1, columnspan=1, padx=20, pady=5)
-    stop_plot_button=ctk.CTkButton(app, text="Stop Plotting",border_color="dark-blue", command=stopplotting,font=('Arial',16))
-    stop_plot_button.grid(row=2,column=1, columnspan=1, padx=20, pady=5)
+    # start_plot_button=ctk.CTkButton(app, text="Start Plotting",border_color="dark-blue", command=plotting, font=('Arial',16))
+    # start_plot_button.grid(row=1,column=1, columnspan=1, padx=20, pady=5)
+    # stop_plot_button=ctk.CTkButton(app, text="Stop Plotting",border_color="dark-blue", command=stopplotting,font=('Arial',16))
+    # stop_plot_button.grid(row=2,column=1, columnspan=1, padx=20, pady=5)
     
     # generate the figure and plot object which will be linked to the root element
     from oxygen_sensor import read_O2_sensor
@@ -825,15 +825,13 @@ def create_gui():
             flow_controller_O2.set_flow_rate(0)
             flow_controller_Ar.set_flow_rate(0)
             if messagebox.askokcancel("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
-                if messagebox.askokcancel("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):
-                    loop == False
-                    app.destroy()
-            else:
-                flow_controller_O2.set_flow_rate(30/100)
-                flow_controller_Ar.set_flow_rate(30/100)
+                if messagebox.askokcancel("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):                   
+
     
     stop_button = ctk.CTkButton(app, text="STOP",border_color="red",fg_color="red", font=('Arial',18,"bold"), command=lambda:panic())
     stop_button.grid(row=2, column=2, rowspan=3, columnspan=1, padx=20, pady=5, ipady=50)
+    
+    
     def on_closing():
         total_flow_entry.unbind()
         flow_total_flow_entry.unbind()
