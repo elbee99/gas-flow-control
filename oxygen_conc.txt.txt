@@ -1,0 +1,2 @@
+Start time=	2023-06-27 20:41:41.877824
+Time (s)	O2 conc. (ppm)	O2 setpoint (ppm)

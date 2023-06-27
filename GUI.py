@@ -1,11 +1,11 @@
 from alicat_flowmeter_control import flow_control_basic, flow_control
 from alicat import FlowController
 
-# flow_controller_O2 = FlowController(port='COM3')
-# flow_controller_Ar = FlowController(port='COM5')
+flow_controller_O2 = FlowController(port='COM3')
+flow_controller_Ar = FlowController(port='COM5')
 
-# flow_controller_O2.set_gas('O2')
-# flow_controller_Ar.set_gas('Ar')
+flow_controller_O2.set_gas('O2')
+flow_controller_Ar.set_gas('Ar')
 
 
 import tkinter as tk
@@ -793,7 +793,7 @@ def create_gui():
             oxygen_ppm = read_O2_sensor()
             print(oxygen_ppm)
             current_time = time.time()-start_time
-            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm+'\t'+str(float(setpoint.get())*10^4)
+            data_line = str("{:.2f}".format(current_time))+'\t'+str(oxygen_ppm)+'\t'+str(float(setpoint.get())*10^4)
 
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
