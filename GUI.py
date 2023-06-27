@@ -330,9 +330,8 @@ def create_gui():
     app.columnconfigure(2,weight=3)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
     titlefont = ctk.CTkFont(family="Arial", size=16, weight="bold")
-    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",
-                                                  defaultextension=".txt",
-                                                  filetypes = (("txt files","*.txt"),("all files","*.*")))    # set frames
+    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")))  
+    # set frames
     ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
     FrameConc.grid(row=0, column=0, ipadx=28, sticky="news")
@@ -757,7 +756,7 @@ def create_gui():
     # create a button to define a file path for the data to be saved to
 
 
-    def oxygen_plotting(filename=save_file_path):
+    def oxygen_plotting(filename=save_file_path+".txt"):
         # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
@@ -808,7 +807,9 @@ def create_gui():
             line2.set_linestyle('--')
             ax.relim()
             ax.autoscale_view()
-            canvas.draw()
+
+            fig.canvas.flush_events()
+            canvas = FigureCanvasTkAgg(fig,master=app)
             canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
             
             f.write(data_line)
