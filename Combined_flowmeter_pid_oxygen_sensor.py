@@ -38,7 +38,7 @@ b = Button(root,text='okay',command=printtext)
 b.pack(side='bottom')
 root.mainloop()
 
-pid = PID(1.5,0,0, sample_time = 1, setpoint=setpoint, output_limits=(0,30), starting_output=setpoint)
+pid = PID(0.9,0.016,0, sample_time = 1, setpoint=setpoint, output_limits=(0,30), starting_output=setpoint)
 serial_output = ""
 def controlled_system(flow_rate,oxygen_percent):
     flow_controller_O2.set_flow_rate(flow_rate)

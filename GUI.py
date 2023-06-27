@@ -12,13 +12,14 @@ import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 # plt.ioff()
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib
 import time
 import datetime
 from oxygen_sensor import read_O2_sensor
-from oxygen_plotting import oxygen_plotting
 from pynput.keyboard import Key, Controller
 from simple_pid import PID
 keyboard = Controller()
@@ -311,7 +312,7 @@ def create_gui():
     app.rowconfigure(0,weight=1)
     app.columnconfigure(0,weight=3)
     app.columnconfigure(1,weight=4)
-    GUIfont = ctk.CTkFont(family="Arial", size=12, weight="normal")
+    GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
 
     # set frames
     ## frame for concentration mode
@@ -617,15 +618,15 @@ def create_gui():
 
     #widgets locating in the master app frame
     ## buttons 
-    add_conc_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addpoint()) #button to add concentration setpoint
+    add_conc_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addpoint(),font=('Arial',16)) #button to add concentration setpoint
     add_conc_button.grid(row=1,column=0,columnspan=1,padx=20,pady=5) #show the add_conc_button as the mode is defaulted as concentration mode
-    add_flow_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addflow()) #button to add flow rate setpoint, not shown until the app is in flow rate mode
-    remove_conc_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemovePoint()) #button to remove concentration setpoint
+    add_flow_button = ctk.CTkButton(app, text="Add Point",border_color="dark-blue", command=lambda:addflow(),font=('Arial',16)) #button to add flow rate setpoint, not shown until the app is in flow rate mode
+    remove_conc_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemovePoint(),font=('Arial',16)) #button to remove concentration setpoint
     remove_conc_button.grid(row=Number_of_point+1,column=0,columnspan=1,padx=20,pady=5)
-    remove_flow_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemoveFlow()) #button to remove flow rate setpoint, not shown yet
-    change_to_flow_button = ctk.CTkButton(app, text="Flow Rate",border_color="dark-blue", command=lambda:change_to_flow()) #button to change concentration mode into flow rate mode
+    remove_flow_button = ctk.CTkButton(app, text="Remove Point",border_color="dark-blue", command=lambda:RemoveFlow(),font=('Arial',16)) #button to remove flow rate setpoint, not shown yet
+    change_to_flow_button = ctk.CTkButton(app, text="Flow Rate",border_color="dark-blue", command=lambda:change_to_flow(),font=('Arial',16)) #button to change concentration mode into flow rate mode
     change_to_flow_button.grid(row=3,column=0,columnspan=1,padx=20,pady=5)
-    change_to_conc_button = ctk.CTkButton(app, text=O2_string.translate(SUB),border_color="dark-blue", command=lambda:change_to_conc()) #button to change flow rate mode into concentration mode, not shown yet
+    change_to_conc_button = ctk.CTkButton(app, text=O2_string.translate(SUB),border_color="dark-blue", command=lambda:change_to_conc(),font=('Arial',16)) #button to change flow rate mode into concentration mode, not shown yet
 
     # error message
     app.input_alert_label = ctk.CTkLabel(app, text="", font=GUIfont, text_color=("red"))
@@ -634,6 +635,8 @@ def create_gui():
     # incorporate command line scheduling and flow control here
     def runGUI():
         print(Mode)
+        global start_time
+        start_time = time.time() #record the time when the run starts
         keyboard.press(Key.enter) #simulate pressing and release of the enter key in case the user didn't bind the last entry they made before pressing run
         keyboard.release(Key.enter)
         if Mode == "conc": #detect mode and submit the corresponding entries
@@ -646,7 +649,7 @@ def create_gui():
                     print(i.get())
                     setpoint.set(float(i.get())) #set the setpoint to the value in the entry
                     start_time_of_point_entry = time.time()
-                    pid = PID(1,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
+                    pid = PID(0.9,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
                     def controlled_system(total_flow, O2_set_point, current_O2_percent):
                         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
                         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
@@ -686,7 +689,7 @@ def create_gui():
 
 
     #add run button
-    run_button = ctk.CTkButton(app, text="Run",border_color="dark-blue", command=lambda: runGUI())
+    run_button = ctk.CTkButton(app, text="Run",border_color="dark-blue", command=lambda: runGUI(),font=('Arial',16))
     run_button.grid(row=5,column=0,columnspan=1,padx=20,pady=(5,20))
 
 
@@ -701,9 +704,9 @@ def create_gui():
         oxygen_plotting()
         print(bv1.get())
     
-    start_plot_button=ctk.CTkButton(app, text="Start Plotting",border_color="dark-blue", command=plotting)
+    start_plot_button=ctk.CTkButton(app, text="Start Plotting",border_color="dark-blue", command=plotting, font=('Arial',16))
     start_plot_button.grid(row=1,column=1, columnspan=1, padx=20, pady=5)
-    stop_plot_button=ctk.CTkButton(app, text="Stop Plotting",border_color="dark-blue", command=stopplotting)
+    stop_plot_button=ctk.CTkButton(app, text="Stop Plotting",border_color="dark-blue", command=stopplotting,font=('Arial',16))
     stop_plot_button.grid(row=2,column=1, columnspan=1, padx=20, pady=5)
     
     # generate the figure and plot object which will be linked to the root element
@@ -712,7 +715,7 @@ def create_gui():
     # opens the COM3 port which is what the O2 sensor was when I plugged it in
     # check to see if it is COM3 before running
     # Will try optimise so it selects automatically soon
-    start_time = time.time()
+
     fig, ax = plt.subplots()
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('O$_2$ conc. (%)')
@@ -720,6 +723,9 @@ def create_gui():
     line2, = ax.plot([],[])
     canvas = FigureCanvasTkAgg(fig,master=app)
     canvas.get_tk_widget().grid(row=0, column=1, columnspan=4, sticky="nsew")
+
+    # create a button to define a file path for the data to be saved to
+
 
     def oxygen_plotting(filename='oxygen_conc.txt'):
         """
@@ -729,17 +735,36 @@ def create_gui():
             filename (str, optional): Relative or absolute path to the desired 
             file location of oxygen sensor data. Defaults to 'oxygen_conc.txt'.
         """
-        
-        with open(filename, 'w') as f:
-            
-            f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
-            f.write('Time (s)\tO2 conc. (ppm)\n')
+        # check if the file exists, if not create it
+        if not os.path.isfile(filename):
+            with open(filename, 'w') as f:
+                f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
+                f.write('Time (s)\tO2 conc. (ppm)\n')
+        else:
+            # if file exists, check if it has the correct headers
+            # if it doesn't, create them
+            with open(filename,'r') as f:
+                lines = f.readlines()
+                if len(lines) > 1:
+                    try:
+                        if lines[0].split('\t')[0] == 'Start time=':
+                            pass
+                    except IndexError:
+                        with open(filename, 'w') as f:
+                            f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
+                            f.write('Time (s)\tO2 conc. (ppm)\n')
+                else:
+                    with open(filename, 'w') as f:
+                        f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
+                        f.write('Time (s)\tO2 conc. (ppm)\tO2 setpoint\n')
+        # it will now have the correct head from the above code and only append the data
+        with open(filename, 'a') as f:
 
             oxygen_ppm = read_O2_sensor()
             print(oxygen_ppm)
             oxygen_percent=float(oxygen_ppm)/10e3
-            current_time = time.time()-start_time 
-            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm
+            current_time = time.time()-start_time
+            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm+'\t'+setpoint.get()
 
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
