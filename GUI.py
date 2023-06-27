@@ -10,6 +10,7 @@ flow_controller_Ar.set_gas('Ar')
 
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
 import customtkinter as ctk
 import numpy as np
 import os
@@ -64,6 +65,8 @@ Mode="conc"
 
 loop = True
 
+# filename="lmao"
+
 # GUI function
 def create_gui():
     global Number_of_point
@@ -75,7 +78,7 @@ def create_gui():
     """
     ctk.set_appearance_mode("Dark")
     ctk.set_default_color_theme("blue")
-
+    
     # check functions of the concentration mode
     ## check total flow value
     def check_total_flow(text):
@@ -313,7 +316,7 @@ def create_gui():
     app.columnconfigure(0,weight=3)
     app.columnconfigure(1,weight=4)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
-
+    app.dir_name = filedialog.askdirectory(initialdir = os.path.expanduser('~'),title = "Select directory")
     # set frames
     ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
@@ -728,6 +731,7 @@ def create_gui():
 
 
     def oxygen_plotting(filename='oxygen_conc.txt'):
+        # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
         and plots the data in real time
@@ -737,7 +741,7 @@ def create_gui():
         """
         # check if the file exists, if not create it
         if not os.path.isfile(filename):
-            with open(filename, 'w') as f:
+            with open(filename+".txt", 'w') as f:
                 f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
                 f.write('Time (s)\tO2 conc. (ppm)\n')
         else:
