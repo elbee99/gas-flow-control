@@ -773,7 +773,7 @@ def create_gui():
         if not os.path.isfile(filename):
             with open(filename, 'w') as f:
                 f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
-                f.write('Time (s)\tO2 conc. (ppm)\n')
+                f.write('Time (s)\tO2 conc. (ppm)\tO2 setpoint (ppm)\n')
         else:
             # if file exists, check if it has the correct headers
             # if it doesn't, create them
@@ -786,19 +786,18 @@ def create_gui():
                     except IndexError:
                         with open(filename, 'w') as f:
                             f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
-                            f.write('Time (s)\tO2 conc. (ppm)\n')
+                            f.write('Time (s)\tO2 conc. (ppm)\tO2 setpoint (ppm)\n')
                 else:
                     with open(filename, 'w') as f:
                         f.write('Start time=\t{}\n'.format(datetime.datetime.now()))
-                        f.write('Time (s)\tO2 conc. (ppm)\tO2 setpoint\n')
+                        f.write('Time (s)\tO2 conc. (ppm)\tO2 setpoint (ppm)\n')
         # it will now have the correct head from the above code and only append the data
         with open(filename, 'a') as f:
 
             oxygen_ppm = read_O2_sensor()
             print(oxygen_ppm)
-            oxygen_percent=float(oxygen_ppm)/10e3
             current_time = time.time()-start_time
-            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm+'\t'+setpoint.get()
+            data_line = str("{:.2f}".format(current_time))+'\t'+oxygen_ppm+'\t'+str(float(setpoint.get())*10^4)
 
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
