@@ -825,13 +825,10 @@ def create_gui():
         if messagebox.askokcancel("Oxygen Control", "WARNING: All gas flow will be zeroed."):
             flow_controller_O2.set_flow_rate(0)
             flow_controller_Ar.set_flow_rate(0)
-            if messagebox.askokcancel("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
-                if messagebox.askokcancel("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):
+            if messagebox.showwarning("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
+                if messagebox.showwarning("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):
                     loop == False
                     app.destroy()
-            else:
-                flow_controller_O2.set_flow_rate(30/100)
-                flow_controller_Ar.set_flow_rate(30/100)
     
     stop_button = ctk.CTkButton(app, text="STOP",border_color="red",fg_color="red", font=('Arial',18,"bold"), command=lambda:panic())
     stop_button.grid(row=2, column=2, rowspan=3, columnspan=1, padx=20, pady=5, ipady=50)
