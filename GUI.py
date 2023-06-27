@@ -793,7 +793,7 @@ def create_gui():
             oxygen_ppm = read_O2_sensor()
             print(oxygen_ppm)
             current_time = time.time()-start_time
-            data_line = str("{:.2f}".format(current_time))+'\t'+str(oxygen_ppm)+'\t'+str(float(setpoint.get())*10^4)
+            data_line = str("{:.2f}".format(current_time))+'\t'+str(oxygen_ppm)+'\t'+str(float(setpoint.get())*10**4)
 
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
