@@ -333,7 +333,7 @@ def create_gui():
     app.columnconfigure(2,weight=3)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
     titlefont = ctk.CTkFont(family="Arial", size=16, weight="bold")
-    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")))  
+    save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")), defaultextension=".txt")  
     # set frames
     ## frame for concentration mode
     FrameConc = ctk.CTkScrollableFrame(app)
