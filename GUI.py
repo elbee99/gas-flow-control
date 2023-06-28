@@ -24,6 +24,7 @@ from oxygen_sensor import read_O2_sensor
 from pynput.keyboard import Key, Controller
 from simple_pid import PID
 import logging
+
 keyboard = Controller()
 
 #extract entered values from the respective entry_lists
@@ -69,6 +70,8 @@ Mode="conc"
 loop = True
 
 stop_val = False
+
+extrema_list = []
 
 # filename="lmao"
 
@@ -329,8 +332,8 @@ def create_gui():
     app.title("Oxygen Control")
     app.rowconfigure(0,weight=1)
     app.columnconfigure(0,weight=3)
-    app.columnconfigure(1,weight=3)
-    app.columnconfigure(2,weight=3)
+    app.columnconfigure(1,weight=2)
+    app.columnconfigure(2,weight=4)
     GUIfont = ctk.CTkFont(family="Arial", size=16, weight="normal")
     titlefont = ctk.CTkFont(family="Arial", size=16, weight="bold")
     save_file_path = filedialog.asksaveasfilename(initialdir = os.path.expanduser('~'),title = "Select file",filetypes = (("txt files","*.txt"),("all files","*.*")), defaultextension=".txt")  
@@ -397,6 +400,7 @@ def create_gui():
     total_flow_entry.bind('<Return>',check_total_flow)
     total_flow_unit_label = ctk.CTkLabel(FrameConc,text="sccm", font = GUIfont)
     total_flow_unit_label.grid(row=0, column=3, padx=(5, 20), pady=(5,15), sticky="ew")
+    total_flow_entry.insert(tk.END, "60")
 
     # row for concentration setpoint
     Point_label = ctk.CTkLabel(FrameConc, text="Point 1", font=GUIfont)
@@ -687,9 +691,14 @@ def create_gui():
     # function to submit all input variables
     # incorporate command line scheduling and flow control here
     def runGUI():
-        print(Mode)
         global start_time, stop_val
-        start_time = time.time() #record the time when the run starts
+        start_time = time.time()
+        setpoint.set(float(Point_entry_list[0].get())) 
+        oxygen_plotting()
+        stop_now.set(False)
+        print(Mode)
+
+        #record the time when the run starts
         keyboard.press(Key.enter) #simulate pressing and release of the enter key in case the user didn't bind the last entry they made before pressing run
         keyboard.release(Key.enter)
         if Mode == "conc": #detect mode and submit the corresponding entries
@@ -703,7 +712,7 @@ def create_gui():
                     setpoint.set(float(i.get())) #set the setpoint to the value in the entry
                     start_time_of_point_entry = time.time()
                     setpoint_counter = 0
-                    pid = PID(0.9,0.01,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
+                    pid = PID(0.9,0.01,0.03, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
                     def controlled_system(total_flow, O2_set_point, current_O2_percent):
                         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
                         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
@@ -711,19 +720,21 @@ def create_gui():
                         return current_O2_percent
                     while time.time()< start_time_of_point_entry + float(Duration_entry_list[pos].get())*60:
                         oxygen_percent = float(read_O2_sensor())*10e-5
+                        
                         if abs(oxygen_percent-float(i.get())) > 0.5:
-                            start_time_of_point_entry = time.time()
+                            start_time_of_point_entry = time.time()                            
+                            setpoint_counter = 0
                         else: #setpoint is reached 
+                            #if ():
                             setpoint_counter = setpoint_counter + 1 #just shows message the first time 
                             if setpoint_counter == 1: 
                                 logger.addHandler(SystemLogHandler(message))
-                                logger.info("Setpoint " + str(pos+1) + "is reached at: " + str(time.time()-start_time) + " seconds")
-                        print(oxygen_percent, float(i.get()))
+                                logger.info("Setpoint " + str(pos+1) + " is reached at: " + str("{:.2f}".format(time.time()-start_time)) + " seconds")
+                        print('O2 concentration:', oxygen_percent, 'setpoint', float(i.get()))
                         if abs(oxygen_percent-float(i.get())) < 4:
 
                             PID_setpoint = pid(oxygen_percent) #this is the setpoint required the PID controller
                             #we need to get current value and feed back into the PID controller
-                            print(PID_setpoint)
                             controlled_system(float(total_flow_entry.get()),PID_setpoint,oxygen_percent)
                         else:
                             controlled_system(float(total_flow_entry.get()),float(i.get()),oxygen_percent)
@@ -734,8 +745,7 @@ def create_gui():
                             break
                     if stop_now.get()==True:
                         break
-                    message.insert(index="end", text="Now on Point {}".format(pos+1)+"\n")
-                    update_system_log(message, "Step " + str(pos+1) + "is completed at: " + str(time.time()-start_time) + "seconds")
+                    update_system_log(message, "Step " + str(pos+1) + " is completed at: " + str("{:.2f}".format(time.time()-start_time)) + "seconds")
 
             elif sum(check_val_total_flow) != len(check_val_total_flow) or sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
@@ -796,13 +806,31 @@ def create_gui():
     ax.set_ylabel('O$_2$ conc. (%)')
     line, = ax.plot([],[])
     line2, = ax.plot([],[])
+    line3, = ax.plot([],[])
+    #make fig dark mode
+    fig.patch.set_facecolor('#2b2b2b')
+    fig.patch.set_alpha(0.9)
+    ax.set_facecolor('#2b2b2b')
     canvas = FigureCanvasTkAgg(fig,master=app)
-    canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
-
-    # create a button to define a file path for the data to be saved to
+    canvas.get_tk_widget().grid(row=0, column=1, sticky="nsew")
+    #make canvas transparent
+    canvas.get_tk_widget().config(highlightthickness=0, background='black')
+    # make plot match style of gui
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    ax.spines['bottom'].set_color('white')
+    ax.spines['top'].set_color('white')
+    ax.spines['left'].set_color('white')
+    ax.spines['right'].set_color('white')
+    ax.set_title('Oxygen Concentration', color='white')
+    ax.set_xlabel('Time (s)', color='white')
+    ax.set_ylabel('O$_2$ conc. (%)', color='white')
+    #remove grid
+    ax.grid(False)
 
 
     def oxygen_plotting(filename=save_file_path):
+        global extrema_list 
         # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
@@ -835,27 +863,55 @@ def create_gui():
                         f.write('Time (s)\tO2 conc. (ppm)\tO2 setpoint (ppm)\n')
         # it will now have the correct head from the above code and only append the data
         with open(filename, 'a') as f:
-
+            
             oxygen_ppm = read_O2_sensor()
             print(oxygen_ppm)
             current_time = time.time()-start_time
             data_line = str("{:.2f}".format(current_time))+'\t'+str(oxygen_ppm)+'\t'+str(float(setpoint.get())*10**4)
+            if stop_now.get() == True:
+                print("stopped")
+                #reset the arrays
+                xdata = np.array([])
+                ydata = np.array([])
+                xdata2 = np.array([])
+                ydata2 = np.array([])
+                xdata3 = np.array([])
+                ydata3 = np.array([])
+                #clear the plot
+                line.set_data(xdata,ydata)
+                line2.set_data(xdata2,ydata2)
+                line3.set_data(xdata3,ydata3)
 
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
             ydata = np.append(ydata,float(oxygen_ppm)/10e3)
             xdata2, ydata2 = line2.get_xdata(),line2.get_ydata()
             xdata2 = np.append(xdata2,current_time)
-            ydata2 = np.append(ydata2,float(setpoint.get()))
+            ydata2 = np.append(ydata2,float(setpoint.get())+0.5)
+            xdata3, ydata3 = line3.get_xdata(),line3.get_ydata()
+            xdata3 = np.append(xdata3,current_time)
+            ydata3 = np.append(ydata3,float(setpoint.get())-0.5)
             line.set_data(xdata,ydata)
             line2.set_data(xdata2,ydata2)
+            line3.set_data(xdata3,ydata3)
+
             line2.set_linestyle('--')
+            line3.set_linestyle('--')
+            
+            if abs(float(oxygen_ppm)/10e3-float(setpoint.get())) < 0.5:
+                line2.set_color('g')
+                line3.set_color('g')
+            else:
+                line2.set_color('r')
+                line3.set_color('r')
             ax.relim()
             ax.autoscale_view()
+            
 
             fig.canvas.flush_events()
             # canvas = FigureCanvasTkAgg(fig,master=app)
             # canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
+
             canvas.draw()
             f.write(data_line)
             f.write('\n')
