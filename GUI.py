@@ -803,7 +803,7 @@ def create_gui():
     # create a button to define a file path for the data to be saved to
 
 
-    def oxygen_plotting(filename=save_file_path+".txt"):
+    def oxygen_plotting(filename=save_file_path):
         # global filename
         """
         Reads the oxygen sensor, records the data over time in a text file
