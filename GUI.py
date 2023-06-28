@@ -717,8 +717,7 @@ def create_gui():
                             setpoint_counter = setpoint_counter + 1 #just shows message the first time 
                             if setpoint_counter == 1: 
                                 logger.addHandler(SystemLogHandler(message))
-                                logger.info("Setpoint" + str(pos+1) + "is reached at:" + str(time.time()-start_time) + "seconds")
-
+                                logger.info("Setpoint " + str(pos+1) + "is reached at: " + str(time.time()-start_time) + " seconds")
                         print(oxygen_percent, float(i.get()))
                         if abs(oxygen_percent-float(i.get())) < 4:
 
@@ -736,8 +735,8 @@ def create_gui():
                     if stop_now.get()==True:
                         break
                     message.insert(index="end", text="Now on Point {}".format(pos+1)+"\n")
+                    update_system_log(message, "Step " + str(pos+1) + "is completed at: " + str(time.time()-start_time) + "seconds")
 
-                    
             elif sum(check_val_total_flow) != len(check_val_total_flow) or sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
             
