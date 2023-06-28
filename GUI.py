@@ -23,6 +23,7 @@ import datetime
 from oxygen_sensor import read_O2_sensor
 from pynput.keyboard import Key, Controller
 from simple_pid import PID
+import logging
 keyboard = Controller()
 
 #extract entered values from the respective entry_lists
@@ -66,6 +67,8 @@ message_list = []
 Mode="conc"
 
 loop = True
+
+stop_val = False
 
 # filename="lmao"
 
@@ -347,6 +350,30 @@ def create_gui():
     FrameFlowRate.grid_columnconfigure(1,weight=1)
     FrameFlowRate.grid_columnconfigure(2,weight=1)
     FrameFlowRate.grid_columnconfigure(3,weight=1)
+
+    # Configure logging
+    logging.basicConfig(level=logging.INFO, filename='system.log')
+    log_handler = logging.FileHandler('system.log')
+    log_handler.setLevel(logging.INFO)
+    logger = logging.getLogger('system_log')
+    logger.addHandler(log_handler)
+
+    # Function to update the system log GUI
+    def update_system_log(text_widget, message):
+        text_widget.configure(state="normal")  # Enable the text widget for editing
+        text_widget.insert("end", message + "\n")  # Append the new message
+        text_widget.configure(state="disabled")  # Disable the text widget to prevent editing
+        text_widget.see("end")  # Scroll to the bottom of the text widget
+
+    # Custom log handler to update the system log GUI
+    class SystemLogHandler(logging.Handler):
+        def __init__(self, text_widget):
+            super().__init__()
+            self.text_widget = text_widget
+
+        def emit(self, record):
+            log_message = self.format(record)
+            update_system_log(self.text_widget, log_message)
 
     FrameLog = ctk.CTkFrame(app)
     FrameLog.grid(row=0, column=2, sticky="nsew")
@@ -661,7 +688,7 @@ def create_gui():
     # incorporate command line scheduling and flow control here
     def runGUI():
         print(Mode)
-        global start_time
+        global start_time, stop_val
         start_time = time.time() #record the time when the run starts
         keyboard.press(Key.enter) #simulate pressing and release of the enter key in case the user didn't bind the last entry they made before pressing run
         keyboard.release(Key.enter)
@@ -675,17 +702,26 @@ def create_gui():
                     print(i.get())
                     setpoint.set(float(i.get())) #set the setpoint to the value in the entry
                     start_time_of_point_entry = time.time()
-                    pid = PID(0.9,0.016,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
+                    setpoint_counter = 0
+                    pid = PID(0.9,0.01,0, sample_time = 1, output_limits = (0,100), setpoint = float(i.get()), starting_output= float(i.get())) #PID controller with the setpoint being the concentration setpoint
                     def controlled_system(total_flow, O2_set_point, current_O2_percent):
                         flow_controller_O2.set_flow_rate(total_flow*O2_set_point/100)
                         flow_controller_Ar.set_flow_rate(total_flow-(total_flow*O2_set_point/100))
                         # print(current_O2_percent)
                         return current_O2_percent
-                    message.insert(index="end", text="Now on Point {}".format(pos+1)+"\n")
                     while time.time()< start_time_of_point_entry + float(Duration_entry_list[pos].get())*60:
                         oxygen_percent = float(read_O2_sensor())*10e-5
+                        if abs(oxygen_percent-float(i.get())) > 0.5:
+                            start_time_of_point_entry = time.time()
+                        else: #setpoint is reached 
+                            setpoint_counter = setpoint_counter + 1 #just shows message the first time 
+                            if setpoint_counter == 1: 
+                                logger.addHandler(SystemLogHandler(message))
+                                logger.info("Setpoint" + str(pos+1) + "is reached at:" + str(time.time()-start_time) + "seconds")
+
                         print(oxygen_percent, float(i.get()))
                         if abs(oxygen_percent-float(i.get())) < 4:
+
                             PID_setpoint = pid(oxygen_percent) #this is the setpoint required the PID controller
                             #we need to get current value and feed back into the PID controller
                             print(PID_setpoint)
@@ -695,6 +731,12 @@ def create_gui():
                         
                         oxygen_plotting()  
                         time.sleep(0.5)
+                        if stop_now.get()==True:
+                            break
+                    if stop_now.get()==True:
+                        break
+                    message.insert(index="end", text="Now on Point {}".format(pos+1)+"\n")
+
                     
             elif sum(check_val_total_flow) != len(check_val_total_flow) or sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
                 print("NO WAY")
@@ -709,9 +751,13 @@ def create_gui():
                     print(i.get())
                     flow_control_basic(float(flow_total_flow_entry.get()),float(i.get()))
                     start_time_of_point_entry = time.time()
-                    while time.time()< start_time_of_point_entry + float(Flow_Duration_entry_list[pos].get())*60:
+                    while time.time()< start_time_of_point_entry + float(Flow_Duration_entry_list[pos].get())*60 :
                         oxygen_plotting()  
                         time.sleep(0.5)
+                        if stop_now.get()==True:
+                            break
+                    if stop_now.get()==True:
+                        break
             else:
                 print("Bruh")
             
@@ -724,7 +770,8 @@ def create_gui():
 
     #liveplot (some .grid positioning variables are changed to fit things into the same GUI )
     # bv1=ctk.BooleanVar(value=False)
-    # setpoint=ctk.StringVar(value='0')
+    setpoint=ctk.StringVar(value='0')
+    stop_now=ctk.BooleanVar(value=False)
     # def stopplotting():
     #     bv1.set(0)
     #     print(bv1.get())
@@ -808,9 +855,9 @@ def create_gui():
             ax.autoscale_view()
 
             fig.canvas.flush_events()
-            canvas = FigureCanvasTkAgg(fig,master=app)
-            canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
-            
+            # canvas = FigureCanvasTkAgg(fig,master=app)
+            # canvas.get_tk_widget().grid(row=0, column=1, sticky="nsw")
+            canvas.draw()
             f.write(data_line)
             f.write('\n')
 
@@ -821,12 +868,13 @@ def create_gui():
     
     # Stop button and termination function
     def panic():
+        global stop_val
         if messagebox.askokcancel("Oxygen Control", "WARNING: All gas flow will be zeroed."):
+            stop_now.set(True)
             flow_controller_O2.set_flow_rate(0)
             flow_controller_Ar.set_flow_rate(0)
-            if messagebox.askokcancel("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'."):
-                if messagebox.askokcancel("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue."):                   
-
+            messagebox.showwarning("Oxygen Control", "Turn shutters of both oxygen and argon gas lines to full right, then press 'ok'.")
+            messagebox.showwarning("Oxygen Control", "When the pressure gauges reache 5 psi, twist the valves CLOCKWISE until they are fully closed. Press 'ok' to continue.")                   
     
     stop_button = ctk.CTkButton(app, text="STOP",border_color="red",fg_color="red", font=('Arial',18,"bold"), command=lambda:panic())
     stop_button.grid(row=2, column=2, rowspan=3, columnspan=1, padx=20, pady=5, ipady=50)
