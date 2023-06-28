@@ -382,7 +382,7 @@ def create_gui():
     title_label.grid(row=0, column=0, padx=5, pady=(5,15), sticky="w")
     message = ctk.CTkTextbox(FrameLog, font=GUIfont)
     message.grid(row=1, column=0, rowspan=3, sticky = "nsew")
-    message.configure(state="disabled")
+    message.configure(state="readonly")
     
 
     # Set up the first variables in the concentraton mode frame
@@ -735,7 +735,7 @@ def create_gui():
                             break
                     if stop_now.get()==True:
                         break
-                    message.insert(index="end", text="Now on Point {}".format(pos+1)+"\n")
+                    message.insert(index="end", text="Point {} completed, ".format(pos+1)+"moving to Point {}.".format(pos+2)+"\n")
 
                     
             elif sum(check_val_total_flow) != len(check_val_total_flow) or sum(check_val_point) != len(check_val_point) or sum(check_val_duration) != len(check_val_duration):
