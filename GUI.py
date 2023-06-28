@@ -385,7 +385,7 @@ def create_gui():
     title_label.grid(row=0, column=0, padx=5, pady=(5,15), sticky="w")
     message = ctk.CTkTextbox(FrameLog, font=GUIfont)
     message.grid(row=1, column=0, rowspan=3, sticky = "nsew")
-    message.configure(state="readonly")
+    message.configure(state="disabled")
     
 
     # Set up the first variables in the concentraton mode frame
@@ -807,6 +807,7 @@ def create_gui():
     line, = ax.plot([],[])
     line2, = ax.plot([],[])
     line3, = ax.plot([],[])
+    line4, = ax.plot([],[])
     #make fig dark mode
     fig.patch.set_facecolor('#2b2b2b')
     fig.patch.set_alpha(0.9)
@@ -865,11 +866,9 @@ def create_gui():
         with open(filename, 'a') as f:
             
             oxygen_ppm = read_O2_sensor()
-            print(oxygen_ppm)
             current_time = time.time()-start_time
             data_line = str("{:.2f}".format(current_time))+'\t'+str(oxygen_ppm)+'\t'+str(float(setpoint.get())*10**4)
             if stop_now.get() == True:
-                print("stopped")
                 #reset the arrays
                 xdata = np.array([])
                 ydata = np.array([])
@@ -877,10 +876,15 @@ def create_gui():
                 ydata2 = np.array([])
                 xdata3 = np.array([])
                 ydata3 = np.array([])
+                xdata4 = np.array([])
+                ydata4 = np.array([])
+
                 #clear the plot
                 line.set_data(xdata,ydata)
                 line2.set_data(xdata2,ydata2)
                 line3.set_data(xdata3,ydata3)
+                line4.set_data(xdata4,ydata4)
+
 
             xdata, ydata = line.get_xdata(),line.get_ydata()
             xdata = np.append(xdata,current_time)
@@ -891,19 +895,28 @@ def create_gui():
             xdata3, ydata3 = line3.get_xdata(),line3.get_ydata()
             xdata3 = np.append(xdata3,current_time)
             ydata3 = np.append(ydata3,float(setpoint.get())-0.5)
-            line.set_data(xdata,ydata)
+            xdata4, ydata4 = line4.get_xdata(),line4.get_ydata()
+            xdata4 = np.append(xdata4,current_time)
+            ydata4 = np.append(ydata4,float(setpoint.get()))
+            
             line2.set_data(xdata2,ydata2)
             line3.set_data(xdata3,ydata3)
-
+            line4.set_data(xdata4,ydata4)
             line2.set_linestyle('--')
             line3.set_linestyle('--')
-            
+            #make line 2 and 3 less opaque
+            line2.set_alpha(0.5)
+            line3.set_alpha(0.5)
+            line4.set_alpha(0.8)
+            line.set_data(xdata,ydata)
             if abs(float(oxygen_ppm)/10e3-float(setpoint.get())) < 0.5:
                 line2.set_color('g')
                 line3.set_color('g')
+                line4.set_color('g')
             else:
                 line2.set_color('r')
                 line3.set_color('r')
+                line4.set_color('r')
             ax.relim()
             ax.autoscale_view()
             
