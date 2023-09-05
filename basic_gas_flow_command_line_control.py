@@ -138,7 +138,7 @@ def main():
 
     
     # generate the figure and plot object which will be linked to the root element
-    from oxygen_sensor import read_O2_sensor
+    #from oxygen_sensor import read_O2_sensor
 
     # opens the COM3 port which is what the O2 sensor was when I plugged it in
     # check to see if it is COM3 before running
@@ -166,7 +166,7 @@ def main():
 
             
 
-            oxygen_ppm = read_O2_sensor()
+            oxygen_ppm = '10'# read_O2_sensor()
             print(oxygen_ppm)
             oxygen_percent=float(oxygen_ppm)/10e3
             current_time = time.time()-start_time 
@@ -188,6 +188,7 @@ def main():
             
             f.write(data_line)
             f.write('\n')
+<<<<<<< Updated upstream
 
             if bv1.get() == True:
                 plottingqueue = app.after(100000,oxygen_plotting())
@@ -220,6 +221,12 @@ def main():
     #             else:
     #                 controlled_system(total_flow,O2_set_point,oxygen_percent)
     app.mainloop()
+=======
+            app.after(1000,oxygen_plotting())
+            app.mainloop()
+    oxygen_plotting()
+    
+>>>>>>> Stashed changes
         
 
     # flow_controller_O2 = FlowController(port='COM3')
