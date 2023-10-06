@@ -37,23 +37,45 @@ Follow these steps to set up the Gas Flow Controllers with the Linkham stage if 
 
 ## 3. Operating Instructions
 
-The Graphical User Interface (GUI) allows the user to input either the desired oxygen concentration or flow rates and see a live plot of the oxygen concentration.
+The Graphical User Interface (GUI) allows the user to input either the desired oxygen concentration or flowrates, and see a live plot of the oxygen concentration. 
 
-**To set the desired oxygen concentration, follow these steps:**
-1. Click on the “Concentration” button.
-2. Enter the total flow rate (Note: It is recommended for the flow rate to be less than 100 sccm to prevent damaging the heating element. The software will have a warning window pop up if you input a value above 60 sccm, and a value above 100 sccm is outright forbidden).
-3. Enter the desired oxygen concentration percentage in the range of 0 - 30%.
-4. Enter the duration of the setpoint in minutes.
-5. If it is desired to add more setpoints to the program, press the “Add Point” button. This will prompt you to add the oxygen concentration and duration setpoint for the next segment.
+To initiate the program, run the “GUI.py” script in Visual Studio. A window prompt will ask you to create a new .txt file. Enter a file name and directory you desire. The oxygen concentration over time will be recorded here. After creating the file, the main GUI will show up. 
+
+To set the desired oxygen concentration do the following steps: 
+1. Click on the “Concentration” button on the left panel. 
+2. Enter the total flowrate (Note: It is recommended for the flowrate to be less than 100 sccm to prevent damaging the heating element. The software will have a warning window pop up if you input a value above 60 sccm, and a value above 100 sccm is outright forbidden.)
+3. Enter the desired oxygen concentration percentage in the range of 0 - 30 % 
+4. Enter the duration of the setpoint in minutes 
+5. If it is desired to add more setpoint/s to the program, press the “Add Point” button. This will prompt you to add the oxygen concentration and duration setpoint for the next segment. 
 6. Press “run” to start the program. The program will only start if you have entered all the values correctly.
-7. The live plotting shows the oxygen concentration as a function of time.
+The live plotting shows the oxygen concentration as a function of time. The message panel on the right will let you know when the system stabilises at a desired setpoint concentration. 
 
-**To set the desired oxygen and argon flow rates, follow these steps:**
-1. Click on the “Flowrate” button.
-2. Enter the desired oxygen flow rate in sccm.
-3. Enter the desired argon flow rate in sccm.
-4. Enter the duration of the setpoint in minutes.
-5. If it is desired to add more setpoints to the program, press the “Add Point” button. This will prompt you to add the desired oxygen and argon flow rates for the next segment.
+To set the desired oxygen and argon flowrates do the following steps: 
+1. Click on the “Flowrate” button on the left panel. 
+2. Enter the desired oxygen flowrate in sccm 
+3. Enter the desired argon flowrate in sccm 
+4. Enter the duration of the setpoint in minutes. 
+5. If it is desired to add more setpoint/s to the program, press the “Add Point” button. This will prompt you to add the desired oxygen and argon flowrates for the next segment. 
+6. Press “run” to start the program. The program will only start if you have entered all the values correctly.
+The live plotting shows the oxygen concentration as a function of time. The message panel on the right will let you know when the system stabilises at a desired setpoint concentration.
+
+~To save the gas flow data: 
+After clicking run on the Python program, a prompt will appear to input the file name 
+When the program is stopped, the time and oxygen concentration will be recorded as a .txt file number the name that was inputted 
+
+~Stop button 
+
+In the event of an emergency, it is possible to press the STOP red button that is located on the bottom right corner of the screen. After pressing the button the prompt will as you “WARNING: All gas flow will be zerod”, press okay if you want to stop the gas flow. Continue to follow the instructions to correctly close the gas valves. 
+
+~Calibration and diagnostics 
+
+If the process control takes too long to reach the setpoint, it is possible to change the PID settings. To do this, go to the code to navigate to the PID line in the code, which starts with “pid = PID(0.9, 0.01, 0 …)”. After the bracket, the first value represents the P parameter, second value represents the I parameter, and third value represents the D parameter. 
+
+The tuning process we applied was with the Ziegler-Nicolas method. This involves: 
+1. First tuning the P parameter by setting the I and D terms to zero. Then the P value is gradually increased until the response exhibited oscillatory behaviour 
+2. Next determine the I parameter. First set the P value to 0.45Ku (Ku is the ultimate gain at which the control loop becomes unstable). The I term is calculated as I = 0.833Tu (Tu is the oscillation period).  
+3. These values are only as a guideline and empirical testing may be required to optimise these values. 
+
 
 ## 4. Maintenance
 
